@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400,800');
+
+
+* {
+	box-sizing: border-box;
+}
+
+ .containerpage .button {
+	border-radius: 20px;
+	border: 1px solid #FF4B2B;
+	background-color: #FF4B2B;
+	color: #FFFFFF;
+	font-size: 12px;
+	font-weight: bold;
+	padding: 12px 45px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	transition: transform 80ms ease-in;
+}  
+
+.containerpage   form {
+	background-color: #FFFFFF;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	padding: 0 50px;
+	height: 100%;
+	text-align: center;
+}
+
+.containerpage  input {
+	background-color: #eee;
+	border: none;
+	padding: 12px 15px;
+	margin: 8px 0;
+	width: 100%;
+}
+
+
+.containerpage {
+	background-color: #fff;
+	border-radius: 10px;
+	box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	overflow: hidden;
+	width: 100%;
+	max-width: 768px;
+	min-height: 480px;
+	padding: 0 20px; /* Optional: Add padding to the container */
+  }
+  
+
+
+.containerpage .form-container {
+	position: absolute;
+	top: 0;
+	height: 100%;
+}
+
+.containerpage .log-in-container {
+	left: 0;
+	width: 50%;
+	z-index: 2;
+}
+
+
+.containerpage .overlay-container {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	width: 50%;
+	height: 100%;
+}
+
+
+.containerpage .overlay {
+	/* background: #FF416C;
+	background: -webkit-linear-gradient(to right, #FF4B2B, #FF416C);
+	background: linear-gradient(to right, #FF4B2B, #FF416C); */
+    background-image: url('../Images/loginpagImage.jpg');
+	background-repeat: no-repeat;
+	background-size: cover;
+	background-position: 0 0;
+	color: #FFFFFF;
+	position: relative;
+	left: -100%;
+	height: 100%;
+	width: 200%;
+}
+
+.containerpage .overlay-panel {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	padding: 0 40px;
+	text-align: center;
+	top: 0;
+	height: 100%;
+	width: 50%;
+}
+
+
+.containerpage .overlay-right {
+	right: 0;
+}
+
+
+
+
+/* For screens with a maximum width of 768px (e.g., tablets and smaller devices) */
+@media (max-width: 768px) {
+	.containerpage {
+	  width: 100%;
+	  border-radius: 0;
+	}
+  
+	.containerpage .form-container {
+	  width: 100%;
+	  left: 0;
+	}
+  
+	.containerpage .overlay-container {
+	  width: 100%;
+	  left: 0;
+	}
+  
+	.containerpage .overlay {
+	  width: 100%;
+	}
+  
+	.containerpage .overlay-panel {
+	  width: 100%;
+	}
+  
+	/* Adjust the font size and padding for smaller screens */
+	.containerpage .button {
+	  padding: 10px 35px;
+	  font-size: 10px;
+	}
+  
+	.containerpage input {
+	  padding: 8px 12px;
+	}
+  }
+  
+  /* For screens with a maximum width of 480px (e.g., mobile phones) */
+  @media (max-width: 480px) {
+	/* Adjust the font size and padding for smaller screens */
+	.containerpage .button {
+	  padding: 8px 30px;
+	  font-size: 8px;
+	}
+  
+	.containerpage input {
+	  padding: 6px 10px;
+	}
+  }
+  
+
+  /* Custom CSS for hiding/showing Navbar.Toggle on different screen sizes */
+
+  .togglebutton {
+    display: none;
+  }

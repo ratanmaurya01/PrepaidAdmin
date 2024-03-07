@@ -1,0 +1,27 @@
+{
+    "newPassword" : "mx201199",
+    "newEmail" : "example@gmail.com",
+    "tokenDetails" : {
+        "111111" : {
+            "token" : "j8dh89whef8wekf89wef98ef",
+            "isTokenUsed" : "false",
+            "tokenGeneratedTime" : "15:41 16/11/21",
+            "tokenUsedTime" : "null",
+            "tokenUsedBy" : "null"
+        },
+        "111112" : {
+            "token" : "j8dh89whef8wekf89wef98ef",
+            "isTokenUsed" : "false",
+            "tokenGeneratedTime" : "15:41 16/11/21",
+            "tokenUsedTime" : "null",
+            "tokenUsedBy" : "null"
+        },
+        "111113" : {
+            "token" : "j8dh89whef8wekf89wef98ef",
+            "isTokenUsed" : "false",
+            "tokenGeneratedTime" : "15:41 16/11/21",
+            "tokenUsedTime" : "null",
+            "tokenUsedBy" : "null"
+        }
+    }
+}

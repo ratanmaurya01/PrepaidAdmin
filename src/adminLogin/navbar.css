@@ -1,0 +1,42 @@
+.nav-link-with-line {
+  border-right: 5px solid black;
+  padding-right: 20px; /* Adjust this value as needed */
+  margin-right: 30px; /* Adjust this value as needed */
+  margin-left: 30px;
+}
+.lini-nav-items {
+  background-color: #e3f2fd;
+  border-right: 1px solid black;
+  align-items: center; 
+
+}
+ /* Change the color for selected menu items */
+.nav-link:active, .nav-link:hover {
+  background-color: #ff0000;
+  border-radius: 5px;
+}
+
+.nav-item {
+   display: flex;
+  padding: 2px;
+  margin-right: 20px;
+  text-align: center;
+}
+
+.navbar-toggler-icon {
+  color:  red; /* Change this to the desired color */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

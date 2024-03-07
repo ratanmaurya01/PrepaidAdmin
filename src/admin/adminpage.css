@@ -1,0 +1,43 @@
+
+.style{
+    color: green;
+    
+}
+ 
+/* 
+ Admin Profile Photo */
+
+ /* styles.css */
+.AdminPhoto {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1px;
+  }
+  .AdminPhoto img {
+    height: 10%;
+    width: 20%;
+    border-radius: 60%;
+    background-color: #6e5252;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); 
+
+  }
+  
+      /* input border fields  */
+  /* .formgroup input {
+    border: none;
+    border-bottom: 1px solid #ce4a4a; 
+    border-radius: 0; 
+    width: 110%;
+    box-sizing: border-box;
+    outline: none;
+    margin-top: 0;
+   
+} */
+
+
+
+
+
+
+

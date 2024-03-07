@@ -1,0 +1,77 @@
+.container {
+  margin: 5px;
+  overflow-y: auto;
+  /* Add any additional styles you need */
+}
+
+.serial-info {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.horizontal-line {
+  margin: 10px;
+}
+
+.customBox {
+  margin: 10px;
+  height: auto;
+  /* Set the height */
+  display: flex;
+  float: left;
+  background-color: red;
+  /* Default background color */
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #FFFFFF;
+  /* Change this color if needed */
+  width: 20%;
+  /* 25% width to fit four items in a row */
+  box-sizing: border-box;
+  /* Include padding and border in the width */
+}
+
+
+.rowContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+
+.full-screen-modal {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+
+}
+
+
+
+/* groupname edit  */
+
+/* .contents {
+  background-color: #e3f2fd;
+  display: inline-block;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin-right: auto;
+
+}
+.contents h2 {
+  margin-bottom: 20px;
+} */
+/* 
+.contents img {
+  position: absolute;
+  top: 0;
+  right: 0;
+} */
+
+
+

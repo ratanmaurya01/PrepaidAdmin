@@ -1,0 +1,569 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+.inputs-container {
+
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 6px 100px gray;
+  padding: 10px;
+  width: 300px;
+  position: fixed;
+  left: 70px 5px;
+  background: #ffffff;
+  z-index: index 333;
+
+}
+
+.input-field {
+  width: 200px;
+  height: 30px;
+  margin-bottom: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.custom-button {
+  width: auto;
+  margin: 5px;
+  height: 40px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+
+.input-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Style for the date input */
+#date-input {
+  padding-right: 30px;
+  /* Space for the calendar icon */
+}
+
+/* Style for the calendar icon */
+#calendar-icon {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.form-container {
+  position: relative;
+}
+
+.date-picker-wrapper {
+  position: absolute;
+  z-index: 999;
+  /* Adjust z-index as needed */
+}
+
+      /* for test Page css  */
+
+
+.customBox1{
+   /* background-color:gainsboro;
+   float: left;
+   width: auto;
+   border-radius: 5px;
+   border: 1px solid gray;
+   padding: 10px;
+   margin: 10px;
+   justify-content: space-between;
+   align-items: center;
+   box-sizing: border-box;
+   flex-direction: column;
+   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); */
+
+   margin: 10px;
+   height: auto; /* Set the height */
+   display: flex;
+   float: left;
+   background-color: red; /* Default background color */
+   flex-direction: column;
+   align-items: center;
+   justify-content: space-between;
+   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+   padding: 10px;
+   border-radius: 5px;
+   background-color: #FFFFFF; /* Change this color if needed */
+   width:20%; /* 25% width to fit four items in a row */
+   box-sizing: border-box; /* Include padding and border in the width */
+   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* @media screen and (min-width: 500px) {
+  .row {width: 200px; float: left;}
+ 
+} */
+
+/* Define default styles */
+
+/* For screens smaller than 768px */
+/* @media (max-width: 450px) {
+  /* Adjust styles for smaller screens */
+
+/* .container
+ {
+      width: 100%;
+    
+  } */
+
+
+/* Additional specific styles for smaller screens */
+/* ... */
+
+
+/* For screens 768px and larger */
+
+
+/* Additional specific styles for larger screens */
+/* ... */
+
+.form-label {
+  color: #000000;
+
+}
+
+.sidebar {
+  margin: 0;
+  padding: 30px;
+  margin-top: 5%;
+  width: 300px;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
+
+}
+
+.sidebar .Image {
+  margin-left: 50px;
+}
+
+/* Sidebar links */
+.sidebar a {
+  display: block;
+  color: black;
+  padding: 16px;
+  text-decoration: none;
+}
+
+/* Active/current link */
+.sidebar a.active {
+  background-color: #04AA6D;
+  color: white;
+}
+
+/* Links on mouse-over */
+.sidebar a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+
+/* Page content. The value of the margin-left property should match the value of the sidebar's width property */
+div.content {
+  margin-left: 240px;
+  padding: 1px 16px;
+  height: auto;
+  position: fixed;
+  width: 100%;
+
+}
+
+
+
+/* On screens that are less than 700px wide, make the sidebar into a topbar */
+@media screen and (max-width: 650px) {
+  .sidebar {
+    width: 50%;
+    height: 100%;
+ 
+  }
+
+
+  .sidebar a {
+    float: left;
+  }
+
+  .sidebar h5{
+    text-align: center;
+    
+  }
+
+  div.content {
+    margin-left: 0;
+  }
+
+}
+
+/* On screens that are less than 400px, display the bar vertically, instead of horizontally */
+@media screen and (max-width: 650px) {
+  .sidebar a {
+    text-align: center;
+    float: none;
+  }
+
+  .sidebar .Image {
+    margin-left: 15px;
+  }
+
+
+  .sidebar  p{
+      text-align: center;
+
+  }
+
+}
+
+
+
+.input-row {
+  display: flex;
+
+  justify-content: space-between;
+  margin-bottom: 10px;
+  /* Adjust as needed */
+}
+
+.formdata {
+  width: 40%;
+}
+
+.col-md-6 {
+  margin: 5px auto;
+  padding: 2px 10;
+
+}
+
+.input-row1 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  /* Adjust the gap between columns */
+}
+
+.input-column {
+  flex: 1 0 50%;
+  /* Two columns in a row */
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+  color: black;
+}
+
+
+@media (max-width: 768px) {
+
+  /* Adjust styles for smaller screens */
+  .col-md-3 {
+    width: 100%;
+    /* Make the sidebar take full width on smaller screens */
+  }
+
+  .col-md-9 {
+    width: 100%;
+    /* Make the main content take full width on smaller screens */
+  }
+
+  /* Add more specific styles as needed */
+}
+
+
+
+
+.input-field {
+  width: 20px;
+  padding: 8px;
+  border: 0;
+  margin-right: 10px;
+  border: 1px solid #000000;
+  border-radius: 4px;
+}
+
+.underline-input {
+  border: none;
+  width: 20%;
+  outline: 0;
+  color: #000000;
+  font-size: 20px;
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid #000000;
+  outline: none;
+
+} 
+.input-field {
+  width: 200px;
+  padding: 8px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  -ms-border-radius: 0;
+  -o-border-radius: 0;
+}
+
+.underline-input {
+  position: relative;
+  border: none;
+  background-color: transparent;
+  border-bottom: 1px solid #000000;
+  outline: none;
+  width: 30%;
+}
+
+.groupname {
+  margin: 0;
+  background-color: #FFC0CB;
+  width: 94%;
+ 
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+}
+
+.group-icon {
+  position: relative;
+  margin-left: 25px;
+  background-color: #e3f2fd;
+  border-radius: 5px;
+  height: 40px;
+  width: 30%;
+  color: #ffffff;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  /* Add box shadow */
+
+}
+
+.groupname p {
+  display: inline-block;
+  color: black;
+  font-size: 15px;
+  font-weight: bold;
+  margin-left: 20px;
+}
+
+.groupname button {
+  margin-top: 15%;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+
+}
+
+.groupnameFrom label {
+
+  color: #000000;
+  font-size: 15px;
+
+} 
+
+
+
+
+/* Base styles for general elements */
+/* .input-field {
+  width: 100%;
+  padding: 8px;
+  margin-right: 0;
+  border: 1px solid #ccc;
+  border-radius: 0;
+  
+}
+
+.underline-input {
+  position: relative;
+  border: none;
+  background-color: transparent;
+  border-bottom: 1px solid #000000;
+  margin: 10px;
+  outline: none;
+  width: 100%;
+}
+
+.groupname {
+  margin: 0;
+  background-color: pink;
+  height: auto;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+}
+
+.group-icon {
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #1941E8;
+  border-radius: 5px;
+  height: 40px;
+  width: 50%;
+  color: #ffffff;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.groupname p {
+  color: #f1f1f1;
+  margin-left: 20px;
+}
+
+.groupname button {
+  margin-top: 15px;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.groupnameFrom label {
+  margin: 10px;
+  color: #000000;
+  font-size: 15px;
+} */
+
+
+/* Media queries for smaller screens (max-width: 600px) */
+/* @media screen and (max-width: 600px) {
+  .group-icon {
+    width: 100%;
+  }
+
+  .groupnameFrom {
+    flex-direction: column;
+  }
+
+  .input-field {
+    margin-bottom: 10px;
+  }
+
+  .groupname button {
+    margin-top: 15px;
+    width: 100%;
+  }
+} */
+
+
+
+
+
+
+
+
+
+/* .modal-fullscreen {
+    width: 100vw;
+    max-width: 100vw;
+    height: 50vh;
+    max-height: 50vh;
+    margin: 0;
+}
+
+.modal-fullscreen .modal-dialog {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+} 
+ */
+.custom-modal {
+  max-width: 70vw !important;
+  position: fixed;
+  top: 3%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-modal .modal-dialog {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.custommodal {
+  max-width: 60vw !important;
+}
+
+.modelbody {
+  height: 70vh !important;
+}
+
+
+
+
+
+/* YourComponent.css */
+/* 
+.container1 {
+  display: flex;
+  margin-left: 3%;
+  margin-top: 20px;
+}
+
+.input-field {
+  width: 50px;
+  padding: 8px;
+  border: 0;
+  margin-right: 10px;
+  border: 1px solid #000000;
+  border-radius: 4px;
+}
+
+.underline-input {
+  border: none;
+  border-bottom: 1px solid #ccc;
+  outline: none;
+  width: 100%;
+}
+
+.btn {
+  padding: 8px 12px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-success {
+  background-color: #28a745;
+}
+
+.space {
+  margin-right: 40px;
+ 
+} */

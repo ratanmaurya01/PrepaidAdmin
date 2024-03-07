@@ -1,0 +1,8 @@
+{
+  "firebase": {
+    "projectId": "mij-prepaid-meter",
+    "databaseURL": "https://mij-prepaid-meter-default-rtdb.firebaseio.com",
+    "storageBucket": "mij-prepaid-meter.appspot.com",
+    "locationId": "us-central"
+  }
+}

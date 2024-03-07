@@ -1,0 +1,78 @@
+   /* token available Heading  */
+   .Token_available{
+    color: red;
+    text-align: center;
+    
+   }
+
+   /* checkBox style */
+   .checkbox{
+       height: 25px;
+       width: 25px;
+       margin: 10px;
+   }
+   .flex-container_for_checkbox {
+    display: flex;
+    align-items: center; /* Align items vertically */
+  }
+
+ .group_container  {
+  background-color: #e3f2fd;
+  display: flex;
+  border-radius: 5px;
+  width: 30%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+ 
+  
+}
+ .group_para_groupname{
+  font-size: 14px;
+  font-weight: bold;
+
+
+ }
+.group_para_tariff {
+  font-size: 12px;
+  font-weight: bold;
+  color: #000000; 
+  margin-top: -20px;
+}
+
+
+  /* for  Meter Serial number  */
+
+  .meter_serial_number{
+    font-weight: bold;
+    margin-top: -8px;
+    background-color: #e3f2fd ;
+    height: 45px;
+    border-radius: 4px;
+  }
+
+/* Styling for the div heading  paragraph*/
+.paragraphDivesion {
+  padding: 10px;
+
+}
+
+.paragraphDivesion .name {
+  font-weight: bold;
+  margin-top: -20px;
+  /* text-align: center;
+  align-items: center; */
+}
+
+.name {
+  margin-top: -10px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100px;
+}
+
+.name2 {
+  margin-top: -20px;
+}
+
+

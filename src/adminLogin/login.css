@@ -1,0 +1,245 @@
+/* login.css */
+
+.containers {
+    max-width: 5px;
+    margin: 0 auto;
+    margin-top: 8%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    /* Adding box shadow */
+}
+
+.formgroup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.formgroup>div {
+    margin-bottom: 15px;
+}
+
+
+.paragrap {
+
+    margin-bottom: 5px;
+    margin-left: -50%;
+
+}
+
+.paragrappassword{
+
+    margin-bottom: 5px;
+    margin-left: -70%;
+}
+
+
+
+ .createbutton {
+    margin: 10px;
+	border-radius: 20px;
+	border: 1px solid #FF4B2B;
+	background-color: #ffffff;
+	color: black;
+	font-size: 12px;
+	font-weight: bold;
+	padding: 12px 45px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	transition: transform 80ms ease-in;
+}  
+
+.flex-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+  }
+  
+  .welcome-text {
+    margin-top: 60%;
+    text-align: center;
+  }
+  
+  .button-container {
+    text-align: center;
+    margin-bottom: 30%;
+  }
+
+
+
+
+ /* label {
+    display: block;
+    margin-left: -50%;
+    margin-bottom: 5px;
+} */
+
+.form-control {
+    width: 50%;
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.text-sm {
+    font-size: 14px;
+}
+
+.text-white {
+    color: white;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.forgetpassword {
+    margin-left: 70%;
+    height: 50px;
+
+
+}
+
+.forgetpassword p:hover {
+    color: red; /* Change the color to red when hovered */
+    text-decoration: underline; /* Add an underline when hovered */
+  }
+
+.imgcontainer {
+    text-align: center;
+    margin: 2px 0 4px 0;
+    position: relative;
+}
+
+img.avatar {
+    width: 30%;
+    /* border-radius: 60%; */
+    /* box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5); */
+
+}
+
+ /* input fielsd incon */
+
+.input-container1 {
+    position: relative;
+  }
+  
+  .input-container1 i {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10px;
+    color:gray;
+  }
+
+
+  .input-container1 img {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10px;
+    color:black;
+  }
+
+  .input-container1 input{
+   padding-left: 30px;
+  }
+
+  .password-toggle-button {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .input-container1 .password-toggle-button-eye-icon{
+    color: gray;
+    height: 14px;
+  }
+
+  /* .red-icon {
+    color: red;
+  }
+
+
+  .password-toggle-icon {
+    font-size: 12px;
+    color: black; 
+  } */
+ 
+/* Responsive styles using media queries */
+
+/* For screens smaller than 768px (e.g., mobile devices) */
+@media (max-width: 650px) {
+    .containers {
+        max-width: 100%;
+        margin-top: 15px;
+    }
+
+    .form-control {
+        width: 100%;
+    }
+}
+
+/* For screens between 768px and 992px (e.g., tablets) */
+@media (min-width: 750px) and (max-width: 950px) {
+    .containers {
+        max-width: 40%;
+    }
+}
+
+/* For screens larger than 1200px */
+@media (min-width: 1000px) {
+    .containers {
+        max-width: 40%;
+    }
+}
+
+
+
+.forgetpassword {
+    margin-left: 70%;
+}
+
+@media only screen and (max-width: 600px) {
+    .forgetpassword {
+        margin-left: 50%;
+    }
+}
+
+@media only screen and (max-width: 400px) {
+    .forgetpassword {
+        margin-left: 30%;
+    }
+}
+
+
+
+
+/* 
+   Create Account Serial number and meter code open popup */
+
+   

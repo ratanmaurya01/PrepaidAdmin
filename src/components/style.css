@@ -1,0 +1,80 @@
+.data-container {
+    width: 100%;
+    max-width: 600px;
+    /* Adjust the maximum width as needed */
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.data-item {
+    list-style-type: none;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.property-container {
+    margin-bottom: 10px;
+}
+
+.label {
+    display: block;
+    font-weight: bold;
+}
+
+.property-input {
+    width: calc(100% - 20px);
+    /* Adjust the width as needed */
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+    .property-input {
+        width: calc(50% - 20px);
+        /* Adjust the width as needed for larger screens */
+    }
+}
+
+/* .container {
+    align-items: center;
+    border-radius: 5px;
+    margin-top: 10%;
+    text-align: center;
+    box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.4);    
+}
+
+.logo {
+    margin-top: 30%;
+    padding-right: 10px;
+    background-color: green;
+    height:70px;
+    width: 15%;
+    border-radius: 5px;
+    display: flex;
+
+}
+
+img {
+    height: 30px;
+    width: 30px;
+}
+
+.paragraph {
+    color: white;
+    margin: 5px;
+}
+.rechargetoken{
+    float: right;
+    background-color:rgb(48, 48, 141) ;
+} */
+
+.container{
+    background-color: #ccc;
+}
+.meterdetails{
+    display: flex;
+    justify-content: space-around;
+    margin: 5px;
+    padding: 10px;
+}

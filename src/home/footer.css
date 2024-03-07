@@ -1,0 +1,170 @@
+.page-footer {
+  background-color: #343a40;
+  color: #fff;
+}
+
+.page-footer .container-fluid {
+  padding-top: 10px;
+}
+
+.page-footer .container-fluid h5 {
+  font-size: 18px;
+  color: #fff;
+}
+
+.page-footer .container-fluid p {
+  font-size: 16px;
+}
+
+.page-footer .container-fluid hr {
+  border-top: 1px solid #fff;
+}
+
+.page-footer ul {
+  padding-left: 0;
+}
+
+.page-footer ul li {
+  list-style: none;
+}
+
+.page-footer ul li a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.page-footer ul li a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+
+/* Custom CSS for the input group */
+
+
+/* Custom CSS for the input group */
+.input-group {
+  position: relative;
+  width: 20%;
+
+
+}
+
+/* Position the icon absolutely within the input field */
+.input-group i {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  cursor: pointer;
+
+}
+
+/* Adjust the input field padding */
+.input-group input[type="email"] {
+  padding-right: 30px;
+  /* Add padding for the icon */
+  background: transparent;
+  /* Make the input field background transparent */
+  border: 1px solid #ced4da;
+  /* Add border to the input field */
+  border-radius: 0;
+  /* Remove border radius */
+
+}
+
+/* Adjust the icon size and color */
+.input-group i {
+  font-size: 1rem;
+
+}
+
+/* Set the hover color */
+.input-group i:hover,
+.input-group input[type="email"]:hover {
+  color: rgb(255, 252, 252);
+  /* Set the hover color */
+}
+
+#button-addon2 {
+  margin-top: -5% !important;
+  background-color: blue;
+  height: 110% !important;
+  color: aliceblue;
+}
+
+.input-group input[type="email"]::placeholder {
+  color: #fff;
+  /* Set the placeholder text color */
+}
+
+.col-12 a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.col-12 a:hover {
+  color: #ced4da;
+}
+
+
+@media (max-width: 768px) {
+  .col-md-3 {
+    width: 100%;
+  }
+}
+
+/* src/styles.css */
+.navbar-custom {
+  background-color: #4CAF50;
+  /* Change to the color you want */
+  color: white;
+  /* Change to the color you want */
+}
+
+/* UTILITIES */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: cursive;
+}
+
+a {
+  text-decoration: none;
+}
+
+li {
+  list-style: none;
+}
+
+   
+     /* home page   Navbar Css  */
+
+
+ .logo{
+  margin-top: 8px;
+  margin-left: 30px;
+  width: 20%;
+} 
+
+
+@media (max-width: 650px) {
+  .navbar-expand-lg .navbar-nav {
+    flex-direction: column;
+  }
+  .navbar-expand-lg .navbar-nav .nav-link {
+    padding: 5px;
+  }
+}
+
+@media (max-width: 650px) {
+  .logo {
+    margin-top: 8px;
+    margin-left: 0;
+    width: 100%;
+  }
+}
