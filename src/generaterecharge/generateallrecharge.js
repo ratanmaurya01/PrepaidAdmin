@@ -168,7 +168,7 @@ const handleLogout = () => {
               className='paragraph'
               onClick={() => handleSidebarItemClick('Singlemeter')}
             >
-              Generate Recharge Token for Single Meter
+              Generate Recharge Token for Single Meter 
             </p>
           </div>
 
@@ -179,7 +179,7 @@ const handleLogout = () => {
 
               onClick={() => handleSidebarItemClick('Adin')}
             >
-              Generate Token for Pending Request 
+              Generate Recharge Token for Pending Request(s) 
             </p>
           </div>
           

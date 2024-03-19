@@ -11,30 +11,36 @@ class IsDeleteTransferToken {
     }
 
     async getAllTokenSerial(phoneNumber) {
-        
         try {
             const newAdminDetailsPath = database.ref(`adminRootReference/adminDetails/${phoneNumber}/meterList`);
-
             const snapshot = await newAdminDetailsPath.once('value');
             const serialData = snapshot.val();
-
             // Check if serialData is not null or undefined
             if (serialData) {
                 const keys = Object.keys(serialData);
-
                 const isDuplicate = keys.some(key => allSerialNo.includes(key));
 
                 allSerialNo.push(...keys);
-                 this.deletePendingToken();
+               //  this.deletePendingToken();
+
+               const pendingTokensDeleted = await this.deletePendingToken();
+
+               return { serialNumbers: allSerialNo, pendingTokensDeleted };
                  
               //  console.log('seiufhef');
-                return allSerialNo;
+                 // return allSerialNo;
             } else {
-                return []; // or handle this case as per your requirement
+                  
+                return { serialNumbers: [], pendingTokensDeleted: false };
+                //return []; // or handle this case as per your requirement
             }
         } catch (error) {
+             
             console.error("Error fetching serial data:", error.message);
-            return []; // or handle this case as per your requirement
+            return { serialNumbers: [], pendingTokensDeleted: false };
+            
+            //console.error("Error fetching serial data:", error.message);
+           // return []; // or handle this case as per your requirement
         }
     }
 
@@ -151,16 +157,15 @@ class IsDeleteTransferToken {
                 const meterDetailsPath = firebase.database().ref(`adminRootReference/meterDetails/${sr}`);
                 const snapshot = await meterDetailsPath.once('value');
                 const newData = snapshot.val();
-    
                 if (newData !== null) {
-                    console.log("serial new ");
+                  //  console.log("serial new ");
                     if (newData.reConfigToken !== undefined) {
                         const isTransfer = newData.reConfigToken.isTransfer;
                         const token = newData.reConfigToken.token;
                         if (isTransfer === "true" && token !== "null") {
                             // Remove token if it meets conditions
                             await meterDetailsPath.child('reConfigToken').remove();
-                            console.log("data deleted successfully");
+                            //   console.log("data deleted successfully");
 
                             pendingTokenFound = true;
                         } else {
@@ -175,8 +180,11 @@ class IsDeleteTransferToken {
             }
     
             if (!pendingTokenFound) {
-                alert("No pending token. ");
+               // console.log("No pending token. ");
             }
+
+            return pendingTokenFound; // Indicate whether any pending tokens were found and deleted
+
     
         } catch (e) {
             console.log('Error Fetching:', e);

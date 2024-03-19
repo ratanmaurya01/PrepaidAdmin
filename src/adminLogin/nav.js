@@ -147,10 +147,9 @@ const fetchEmailFromFirebase = (storedPhoneNumber) => {
           </li>
 
 
-          <li className="nav-items" >
+          {/* <li className="nav-items" >
             <h6 style={{marginTop:'10px' ,}}>{name}</h6>
-          </li>
-
+          </li> */}
 
         </ul>
       </ul>

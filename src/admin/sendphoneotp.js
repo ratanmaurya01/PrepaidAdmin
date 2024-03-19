@@ -86,12 +86,6 @@ function Sendphone() {
   }
 
 
-
-
-
-
-
-
   return (
     <>
 
@@ -100,7 +94,7 @@ function Sendphone() {
       </div>
       <div className='containers'>
         <div className='formgroup'>
-          <h3>Verify Mobile Number</h3>
+          {/* <h3>Verify Mobile Number</h3> */}
           <div>
             <label htmlFor="phoneNumber">Phone Number</label>
             <input
@@ -108,6 +102,9 @@ function Sendphone() {
               className='form-control'
               placeholder="Phone Number"
               defaultValue={newPhone ? `+91${newPhone}` : '+91'}
+              readOnly
+              disabled
+
             />
           </div>
           <div className="d-grid col-4">

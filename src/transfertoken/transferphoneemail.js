@@ -31,6 +31,7 @@ function Transferphoneemail() {
   const [oldAdminNumber, setOldAdminNumber] = useState('');
   const [password, setPassword] = useState('');
   const [adminKey, setAdminKey] = useState('');
+  const [loading, setLoading] = useState(true); // State to track loading status
 
   const { phonenumberlist } = location.state || {};
   // const { email } = location.state || {};
@@ -52,6 +53,7 @@ function Transferphoneemail() {
           const numberPart = emailParts[0];
           setOldAdminNumber(numberPart);
           getAdminPassword(numberPart);
+          setLoading(false);
 
           //  console.log("Number part:", numberPart); // Log the extracted number part
         }
@@ -87,25 +89,26 @@ function Transferphoneemail() {
 
     const storedPhoneOTP = localStorage.getItem('otp'); // Get stored phone OTP
     const storedEmailOTP = localStorage.getItem('emailOTP'); // Get stored email OTP
-    //  if (mobileOTP === storedPhoneOTP && emailOTP === storedEmailOTP) {
-    // console.log('New Password  ', transferPassword);
-    // console.log('new Phone  ', phonenumberlist);
+    if (mobileOTP === storedPhoneOTP && emailOTP === storedEmailOTP) {
+      // console.log('New Password  ', transferPassword);
+      // console.log('new Phone  ', phonenumberlist);
 
-    handlePhoneSerialList();
-    // } else {
-    //   // OTPs do not match, set error messages or handle accordingly
-    //   if (mobileOTP !== storedPhoneOTP) {
-    //     setMobileOTPError('Invalid mobile OTP');
-    //   }
-    //   if (emailOTP !== storedEmailOTP) {
-    //     setEmailOTPError('Invalid email OTP');
-    //   }
-    // }
+      handlePhoneSerialList();
+      // } else {
+      //   // OTPs do not match, set error messages or handle accordingly
+      //   if (mobileOTP !== storedPhoneOTP) {
+      //     setMobileOTPError('Invalid mobile OTP');
+      //   }
+      if (emailOTP !== storedEmailOTP) {
+        setEmailOTPError('Invalid email OTP');
+      }
+    }
 
   };
 
 
   const handlePhoneSerialList = async () => {
+
     console.log("Old Admin Phone Number ", oldAdminNumber);
     try {
       const newAdinDetialspath = database.ref(`adminRootReference/adminDetails/${oldAdminNumber}/meterList`);
@@ -133,7 +136,6 @@ function Transferphoneemail() {
     }
   }
 
-
   const generateToken = async (srnumber) => {
 
     try {
@@ -146,19 +148,17 @@ function Transferphoneemail() {
       //  console.log("servertime",allSerialNo.length);
 
       //  for (let i = 0; i < allSerialNo.length; i++) {
-      const TransferToken = mainFunction.isTransferToken( type, phonenumberlist, srnumber, transferPassword, transferKey, adminKey );
+      const TransferToken = mainFunction.isTransferToken(type, phonenumberlist, srnumber, transferPassword, transferKey, adminKey);
 
       console.log("Token Hex for reconfig :  ", TransferToken);
 
-       handleUpdateFromfirebase(srnumber, TransferToken, mytime);
+      handleUpdateFromfirebase(srnumber, TransferToken, mytime);
       // }
 
     } catch (error) {
       console.error("Error fetching server time:", error);
     }
   };
-
-
 
   const handleUpdateFromfirebase = async (serialNumber, token, serverTime) => {
     try {
@@ -230,20 +230,20 @@ function Transferphoneemail() {
         }
       }
 
-         // After the loop is done and counts are calculated
-   
-    alert("Re-Configuration token Generated for  " + countGenerated + " meter(s). \n Re-Configuration token not generated for" + countNotGenerated + "  meter(s).\n  as token pending for transefer to new admin. You have been logged out. \n Please LogIn " );
+      // After the loop is done and counts are calculated
+
+      alert("Re-Configuration token Generated for  " + countGenerated + " meter(s). \n Re-Configuration token not generated for" + countNotGenerated + "  meter(s).\n  as token pending for transefer to new admin. You have been logged out. \n Please LogIn ");
       // console.log("Count of generated tokens:", countGenerated);
       // console.log("Count of tokens not generated:", countNotGenerated);
 
 
-    //   const popupContent = `
-    //   <p>Count of generated tokens: ${countGenerated}</p>
-    //   <p>Count of tokens not generated: ${countNotGenerated}</p>
-    // `;
+      //   const popupContent = `
+      //   <p>Count of generated tokens: ${countGenerated}</p>
+      //   <p>Count of tokens not generated: ${countNotGenerated}</p>
+      // `;
 
-    // const popupWindow = window.open("", "Token Counts", "width=400, height=200");
-    // popupWindow.document.write(popupContent);
+      // const popupWindow = window.open("", "Token Counts", "width=400, height=200");
+      // popupWindow.document.write(popupContent);
 
     } catch (e) {
       console.log('Error Fetching:', e);
@@ -253,18 +253,44 @@ function Transferphoneemail() {
 
 
   const handleMobileOTPChange = (e) => {
-    setMobileOTP(e.target.value);
+
+    const input = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+
+
+    setMobileOTP(input);
     setMobileOTPError('');
+
   };
 
   const handleEmailOTPChange = (e) => {
-    setEmailOTP(e.target.value);
+    const input = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+
+    setEmailOTP(input);
     setEmailOTPError('');
   };
 
   const handleSubmitClick = (e) => {
     e.preventDefault(); // Prevent default form submission
+
+    if (mobileOTP === '') {
+      setMobileOTPError('Invalid mobile OTP');
+      return;
+    }
+
+    if (emailOTP === '') {
+
+      setMobileOTPError('Invalid mobile OTP');
+      return;
+    }
+
     handleOnSubmit(); // Call the submit function
+
+
+  };
+
+
+  const loadingStyle = {
+    pointerEvents: loading ? 'none' : 'auto', // Disable pointer events if loading, otherwise enable
   };
 
 
@@ -272,49 +298,62 @@ function Transferphoneemail() {
   return (
     <>
 
-      <div>
+      <div style={loadingStyle}>
 
-      </div>
+        <div>
+          <Navbar />
+        </div>
 
-      <div className='containers'>
-        <div className='formgroup'>
-          <div>
+
+
+        {loading ? (
+          <div style={{ position: 'fixed', top: '60%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
+            <div className="spinner-border text-danger" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        ) : null}
+
+        <div className='containers'>
+          <div className='formgroup'>
             <div>
+              {/* <div>
               <h3>Enter OTP</h3>
+            </div> */}
+              <label htmlFor="mobileOTP">Enter Mobile OTP</label>
+              <input
+                type="text"
+                className='form-control'
+                placeholder="Mobile OTP"
+                value={mobileOTP}
+                onChange={handleMobileOTPChange}
+                maxLength={6}
+              />
+              {mobileOTPError && <p style={{ color: 'red' }} className="error">{mobileOTPError}</p>}
+            </div>
+            <div>
+              <label htmlFor="emailOTP">Enter E-mail OTP</label>
+              <input
+                type="text"
+                className='form-control'
+                placeholder="E-mail OTP"
+                value={emailOTP}
+                onChange={handleEmailOTPChange}
+                maxLength={6}
+              />
+              {emailOTPError && <p style={{ color: 'red' }} className="error">{emailOTPError}</p>}
+            </div>
+            <div className='d-grid col-4'>
+              <button type="submit" className='btn btn-primary' onClick={handleSubmitClick}>
+                VERIFY
+              </button>
             </div>
 
-            <label htmlFor="mobileOTP">Enter Mobile OTP</label>
-            <input
-              type="text"
-              className='form-control'
-              placeholder="Enter Mobile OTP"
-              value={mobileOTP}
-              onChange={handleMobileOTPChange}
-            />
-            {mobileOTPError && <p className="error">{mobileOTPError}</p>}
-          </div>
-          <div>
-            <label htmlFor="emailOTP">Enter E-mail OTP</label>
-            <input
-              type="text"
-              className='form-control'
-              placeholder="Enter E-mail OTP"
-              value={emailOTP}
-              onChange={handleEmailOTPChange}
-            />
-            {emailOTPError && <p className="error">{emailOTPError}</p>}
-          </div>
-          <div className='d-grid col-4'>
-            <button type="submit" className='btn btn-primary' onClick={handleSubmitClick}>
-              VERIFY
-            </button>
-          </div>
 
-
+          </div>
         </div>
-      </div>
-    
 
+      </div>
 
 
     </>

@@ -119,7 +119,7 @@ function Phoneemailotp() {
                             placeholder="Enter phone number"
                             defaultValue={newPhone ? `+91${newPhone}` : '+91'}
                             readOnly
-
+                            disabled
                         />
                         {/* Display any response messages */}
                     </div>
@@ -133,11 +133,11 @@ function Phoneemailotp() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             readOnly
+                            disabled
                         />
                         {errorMessage && <p  style={{color:'red'}}  >{errorMessage}</p>}
-
                     </div>
-                    <div className='d-grid col-2'>
+                    <div className='d-grid col-4'>
                         <button className='btn btn-primary' onClick={handleButtonClick1} >GET OTP</button>
                     </div>
                 </div>

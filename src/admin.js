@@ -10,6 +10,7 @@ import axios from 'axios';
 import { unlink } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import CommonFuctions from './commonfunction';
+import { Modal, Button } from 'react-bootstrap';
 
 
 
@@ -32,10 +33,9 @@ function Adin() {
   let counter = 0;
   let ltime = 0;
 
-  const [showGenerateButton, setShowGenerateButton] = useState(false);
+
   const [phoneInput, setPhoneInput] = useState('');
   const [meterIdInput, setMeterIdInput] = useState('');
-  const [meterDetails, setMeterDetails] = useState([]);
   const [rechargeRequestTokens, setRechargeRequestTokens] = useState([]);
   const [tokens, setTokens] = useState([]);
   const [selectAllChecked, setSelectAllChecked] = useState(false);
@@ -46,7 +46,8 @@ function Adin() {
 
   const [emails, setEmails] = useState([]);
   const [urls, setUrls] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const [onlineStatus, setOnlineStatus] = useState(null);
 
 
 
@@ -72,18 +73,30 @@ function Adin() {
   getLocalTime();
 
   const pendingTokens = async () => {
+    setLoading(true);
+    const status = await Sessionid.checkInternetConnection(); // Call the function
 
-    setIsLoading(true);
+    if (status === 'Poor connection.') {
+      setIsDialogOpen(true);
+      setModalMessage('No/Poor Internet connection. Cannot access server.');
+
+      setLoading(false);
+
+      return;
+
+    }
+
+
 
     getGroupdetail();
     // console.log("My loog Number is ");
     // console.log("My Number ", number);
 
 
-    if (!number.trim()) {
-      alert('Please Enter a Valid Phone Number.');
-      return;
-    }
+    // if (!number.trim()) {
+    //   alert('Please Enter a Valid Phone Number.');
+    //   return;
+    // }
     try {
       const meters = await getAdminMeterList();
 
@@ -109,7 +122,7 @@ function Adin() {
       const filteredTokens = tokenResults.filter((token) => token !== null);
       setTokens(filteredTokens);
 
-      setIsLoading(false);
+      setLoading(false);
 
 
 
@@ -139,9 +152,6 @@ function Adin() {
           getAdminPassword(numberPart);
           number = numberPart;
           pendingTokens();
-
-
-
 
         }
       } else {
@@ -635,166 +645,220 @@ function Adin() {
 
   }
 
+
+  const [modalMessage, setModalMessage] = useState('');
+
+
+
   const generatetokenData = async () => {
 
+    const selectedCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+
+    if (selectedCheckboxes.length === 0) {
 
 
-    const storeSessionId = localStorage.getItem('sessionId');
-    const { sessionId } = await Sessionid.HandleValidatSessiontime(numberPart);
-    if (storeSessionId === sessionId) {
+      setIsDialogOpen(true);
+      setModalMessage('Please select at least one token before Generating.')
 
-      Sessionid.updateSessionTimeActiveUser(numberPart);
+      // alert('Please select at least one token before Generating.');
+      return; // Stop execution if no checkboxes are selected
+    }
 
 
-      let globalBalance;
-      getLocalTime();
-      // console.log("hett", tokens);
 
-      // check if selcted checkbox is Null
-      const selectedCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+    setLoading(true);
+    const status = await Sessionid.checkInternetConnection(); // Call the function
 
-      if (selectedCheckboxes.length === 0) {
-        alert('Please select at least one token before Generating.');
-        return; // Stop execution if no checkboxes are selected
+    if (status === 'Poor connection.') {
+      setIsDialogOpen(true);
+      setModalMessage('No/Poor Internet connection. Cannot access server.');
+      setLoading(false);
+
+      return;
+
+    }
+
+    const result = Sessionid.isCheckInterNet();
+    if (result) {
+
+      const storeSessionId = localStorage.getItem('sessionId');
+
+      try {
+        const { sessionId } = await Sessionid.HandleValidatSessiontime(numberPart);
+        if (storeSessionId === sessionId) {
+
+          Sessionid.updateSessionTimeActiveUser(numberPart);
+
+          let globalBalance;
+          getLocalTime();
+          // console.log("hett", tokens);
+          // check if selcted checkbox is Null
+          // checl all select checkbox
+          const selectedTokens = tokens.filter((link, index) => {
+            const checkbox = document.getElementById(`checkbox_${index}`);
+            return checkbox.checked === true; // Check if the checkbox is checked
+          });
+          // console.log('hgjhqwgjw', selectedTokens);
+
+          // Proceed with generating token data for unused tokens
+
+          await Promise.all(selectedTokens.map(async (link, index) => {
+            const checkbox = document.getElementById(`checkbox_${index}`);
+            const decryptedData = decryptDataOfRequest(getToken(link));
+            // my Custom date and time 
+            const reqtimeof = decryptedData['timehexdata '];
+            const srNo = decryptedData['srNo'];
+            const amount = decryptedData['amount'];
+            const paymentMode = getPaymentMode(link);
+
+            const kWh = decryptedData['kWh'];
+            const balance = decryptedData['balance'];
+            try {
+              const tarrifDataResult = await getTarrifData(srNo, number);
+              const tokenIdResult = await getTokenid(srNo);
+              const time = await serverTimeFirebase(); // Wait for the server time
+              //  console.log("tokenId", tokenIdResult);
+              const myurls = getnerateRechargeToken(time, '01', number, srNo, password, amount, balance, tarrifDataResult, tokenIdResult);
+              //  console.log("Results:");
+
+
+              // Push myurls into the array
+             // console.log("Dinesh: url-> ", myurls);
+
+              const isDuplicate = rechargeTokes.includes(myurls);
+
+              if (!isDuplicate) {
+                rechargeTokes.push(myurls);
+
+              }
+
+
+              // Print each element of the array one by one
+              // for (let i = 0; i < dataStructureArray.length; i++) {
+              // const emailaddress=  window.emailsAndLinks.emails[0];
+
+              //   console.log("Email address, ",emailaddress);
+              //   console.log("Results of the urlds:", dataStructureArray[i]);
+
+              //   window.emailsAndLinks.links.push(dataStructureArray[i]);
+
+              // }
+
+              // await Message(emails, myurls );
+
+
+              globalBalance = balance;
+
+              return {
+                srNo: srNo,
+                reqtime: reqtimeof,
+                amount: amount,
+                paymentMode: paymentMode,
+                kWh: kWh,
+                balance: balance,
+                time: time, // Include the formatted time
+
+              };
+            } catch (error) {
+             // console.error("Error generating recharge token:", error);
+              return null; // Handle error scenario as needed
+            }
+          }));
+
+       try{
+          Sessionid.updateSessionTimeActiveUser(numberPart);
+       }catch(error){
+
+        setLoading(false);
+        setIsDialogOpen(true);
+        // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+        const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry.`;
+        setModalMessage(errorMessage);
+
+       }
+
+   
+          isDialogOpenSavedata(true);
+          setModalMessage('Data save successfully');
+          setLoading(false);
+
+          //alert('data save successfully');
+
+          sendToken();
+
+          const selectedSRNumbers = selectedTokens.map((token) =>
+            decryptDataOfRequest(getToken(token))['srNo']
+          );
+          // console.log("Selected SR Numbers:", selectedSRNumbers);
+          // Update the 'isUsed' value to 'true' in the real-time database for selected SR numbers where 'isUsed' is currently false
+          // Array to store already used SR numbers
+          const alreadyUsedSRNumbers = [];
+          // Create promises for each SR number update
+          const updatePromises = selectedSRNumbers.map((srNumber) => {
+            return database
+              .ref(`/adminRootReference/meterDetails/${srNumber}/rechargeRequestToken`)
+              .once('value')
+              .then((snapshot) => {
+                const isUsedValue = snapshot.val()?.isUsed;
+                if (isUsedValue === true) {
+                  // console.log(`isUsed value is already true for ${srNumber}`);
+                  alreadyUsedSRNumbers.push(srNumber); // Store already used SR numbers
+                  // No need to update isUsed here, as it's already true
+                } else {
+                  return database
+                    .ref(`/adminRootReference/meterDetails/${srNumber}/rechargeRequestToken`)
+                    .update({ isUsed: true })
+                    .then(() => {
+                      console.log(`isUsed value updated to true for ${srNumber}`);
+                      // Perform any additional actions after updating the database
+                    })
+                    .catch((error) => {
+                      console.error(`Error updating isUsed for ${srNumber}:`, error);
+                    });
+                }
+              })
+              .catch((error) => {
+                console.error(`Error fetching isUsed value for ${srNumber}:`, error);
+              });
+          });
+          // Wait for all promises to resolve
+          await Promise.all(updatePromises);
+          // Show messages or perform actions for already used SR numbers
+          alreadyUsedSRNumbers.forEach((srNumber) => {
+            alert(`isUsed value is already true for ${srNumber}`);
+            // Perform any other actions or UI updates related to already used SR numbers
+          });
+
+          selectedCheckboxes.forEach((checkbox) => {
+            checkbox.checked = false;
+          });
+
+          // selectedCheckboxes.forEach((checkbox) => {
+          //   const checkboxParent = checkbox.parentElement;
+          //   checkboxParent.remove();
+          // });
+          // save values in firebase database
+
+
+
+        } else {
+
+          alert("You have been logged-out due to log-in from another device.");
+          // console.log('you are logg out ');
+          handleLogout();
+        }
+      } catch (error) {
+
+        setLoading(false);
+        setIsDialogOpen(true);
+        // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+        const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
+        setModalMessage(errorMessage);
+
       }
 
-
-      // checl all select checkbox
-      const selectedTokens = tokens.filter((link, index) => {
-        const checkbox = document.getElementById(`checkbox_${index}`);
-        return checkbox.checked === true; // Check if the checkbox is checked
-      });
-      // console.log('hgjhqwgjw', selectedTokens);
-
-      // Proceed with generating token data for unused tokens
-
-      await Promise.all(selectedTokens.map(async (link, index) => {
-        const checkbox = document.getElementById(`checkbox_${index}`);
-        const decryptedData = decryptDataOfRequest(getToken(link));
-        // my Custom date and time 
-        const reqtimeof = decryptedData['timehexdata '];
-        const srNo = decryptedData['srNo'];
-        const amount = decryptedData['amount'];
-        const paymentMode = getPaymentMode(link);
-
-        const kWh = decryptedData['kWh'];
-        const balance = decryptedData['balance'];
-        try {
-          const tarrifDataResult = await getTarrifData(srNo, number);
-          const tokenIdResult = await getTokenid(srNo);
-          const time = await serverTimeFirebase(); // Wait for the server time
-          //  console.log("tokenId", tokenIdResult);
-          const myurls = getnerateRechargeToken(time, '01', number, srNo, password, amount, balance, tarrifDataResult, tokenIdResult);
-          //  console.log("Results:");
-
-
-          // Push myurls into the array
-          console.log("Dinesh: url-> ", myurls);
-
-
-          const isDuplicate = rechargeTokes.includes(myurls);
-
-          if (!isDuplicate) {
-            rechargeTokes.push(myurls);
-
-          }
-
-
-          // Print each element of the array one by one
-          // for (let i = 0; i < dataStructureArray.length; i++) {
-          // const emailaddress=  window.emailsAndLinks.emails[0];
-
-          //   console.log("Email address, ",emailaddress);
-          //   console.log("Results of the urlds:", dataStructureArray[i]);
-
-          //   window.emailsAndLinks.links.push(dataStructureArray[i]);
-
-          // }
-
-          // await Message(emails, myurls );
-
-
-          globalBalance = balance;
-
-          return {
-            srNo: srNo,
-            reqtime: reqtimeof,
-            amount: amount,
-            paymentMode: paymentMode,
-            kWh: kWh,
-            balance: balance,
-            time: time, // Include the formatted time
-
-          };
-        } catch (error) {
-          console.error("Error generating recharge token:", error);
-          return null; // Handle error scenario as needed
-        }
-      }));
-
-      alert('Data Submittef succesfullyy');
-      sendToken();
-
-      const selectedSRNumbers = selectedTokens.map((token) =>
-        decryptDataOfRequest(getToken(token))['srNo']
-      );
-      // console.log("Selected SR Numbers:", selectedSRNumbers);
-      // Update the 'isUsed' value to 'true' in the real-time database for selected SR numbers where 'isUsed' is currently false
-      // Array to store already used SR numbers
-      const alreadyUsedSRNumbers = [];
-      // Create promises for each SR number update
-      const updatePromises = selectedSRNumbers.map((srNumber) => {
-        return database
-          .ref(`/adminRootReference/meterDetails/${srNumber}/rechargeRequestToken`)
-          .once('value')
-          .then((snapshot) => {
-            const isUsedValue = snapshot.val()?.isUsed;
-            if (isUsedValue === true) {
-              // console.log(`isUsed value is already true for ${srNumber}`);
-              alreadyUsedSRNumbers.push(srNumber); // Store already used SR numbers
-              // No need to update isUsed here, as it's already true
-            } else {
-              return database
-                .ref(`/adminRootReference/meterDetails/${srNumber}/rechargeRequestToken`)
-                .update({ isUsed: true })
-                .then(() => {
-                  console.log(`isUsed value updated to true for ${srNumber}`);
-                  // Perform any additional actions after updating the database
-                })
-                .catch((error) => {
-                  console.error(`Error updating isUsed for ${srNumber}:`, error);
-                });
-            }
-          })
-          .catch((error) => {
-            console.error(`Error fetching isUsed value for ${srNumber}:`, error);
-          });
-      });
-      // Wait for all promises to resolve
-      await Promise.all(updatePromises);
-      // Show messages or perform actions for already used SR numbers
-      alreadyUsedSRNumbers.forEach((srNumber) => {
-        alert(`isUsed value is already true for ${srNumber}`);
-        // Perform any other actions or UI updates related to already used SR numbers
-      });
-
-      selectedCheckboxes.forEach((checkbox) => {
-        checkbox.checked = false;
-      });
-
-      // selectedCheckboxes.forEach((checkbox) => {
-      //   const checkboxParent = checkbox.parentElement;
-      //   checkboxParent.remove();
-      // });
-      // save values in firebase database
-
-
-
     } else {
-
-      alert("You have been logged-out due to log-in from another device.");
-      // console.log('you are logg out ');
-      handleLogout();
+      setOnlineStatus(result);
     }
 
 
@@ -1446,75 +1510,106 @@ function Adin() {
 
 
 
+  const [loading, setLoading] = useState(true);
+
+  const [isDialogOpenSavedata, setIsDialogOpenSavedata] = useState(false);
+
+  const closeDialogSavedata = () => {
+    setIsDialogOpenSavedata(false);
+    // window.location.reload(); // This will reload the page
+  };
+
+
+  //No inter connection 
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const closeDialog = () => {
+    setLoading(false);
+    setIsDialogOpen(false);
+
+    // window.location.reload(); // This will reload the page
+  };
+
+
+
+
+
+
   return (
     <>
       {/* <Navbar /> */}
 
-      {isLoading ? (
+
+
+      {onlineStatus !== null && onlineStatus === false ? (
+        <div style={{ textAlign: 'center', marginTop: '20%' }}>
+
+          <h3>No Internet Connection</h3>
+        </div>
+      ) : (
 
         <>
 
-          <p class="spinner-border text-danger" 
-          role="status" 
-           style={{ marginLeft: '50%', marginTop: '8%' }}></p>
 
-        </>
-      ) : (
 
-        <div style={{ marginLeft: '15%', }}>
+          {loading ? (
+            <div style={{ position: 'fixed', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
+              <div className="spinner-border text-danger" role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
+            </div>
+          ) : null}
 
-          <div>
+
+
+          <div style={{ marginLeft: '15%', }}>
+
             <div>
               <div>
-                {tokens.length > 0 ? (
-                  <h2 className='Token_available'>Pending Request.</h2>
-                ) : (
-                  <h2 className='Token_available'>No Pending Request.</h2>
-                )}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-
                 <div>
-                  {tokens.length > 0 && (
-                    <div className="flex-container_for_checkbox">
-                      <input
-
-                        type="checkbox"
-                        id="selectAll"
-                        // checked={selectAllChecked}
-                        onChange={handleSelectAllChange}
-                        className='checkbox'
-                      />
-                      <label className='label' htmlFor="selectAll">Select All</label>
-                    </div>
+                  {tokens.length > 0 ? (
+                    <h2 className='Token_available'>Pending Request(s).</h2>
+                  ) : (
+                    <h2 className='Token_available'>No Pending Request.</h2>
                   )}
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
 
-                {tokens.length > 0 && (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <button className="btn btn-primary" onClick={() => generatetokenData()}>Generate Token for selected meter</button>
+                  <div>
+                    {tokens.length > 0 && (
+                      <div className="flex-container_for_checkbox">
+                        <input
+
+                          type="checkbox"
+                          id="selectAll"
+                          // checked={selectAllChecked}
+                          onChange={handleSelectAllChange}
+                          className='checkbox'
+                          disabled={loading}
+                        />
+                        <label className='label' htmlFor="selectAll">Select All</label>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {tokens.length > 0 && (
+                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                      <button className="btn btn-primary" disabled={loading} onClick={() => generatetokenData()}>Generate Token for selected meter(s)</button>
+                    </div>
+                  )}
 
 
-              </div>
-              {/* <div>
-                <input
-                  type="checkbox"
-                  id="selectAll"
-                  // checked={selectAllChecked}
-                  onChange={handleSelectAllChange}
-                />
-                <label htmlFor="selectAll">Select All</label>
-              </div>  */}
+                </div>
 
 
-              <div style={{ alignItems: 'center', }}>
-                {
-                  tokens.map((link, index) => (
-                    <div key={index} style={{ marginBottom: '20px' }}>
 
-                      {/* {groupData && (
+                <div style={{ alignItems: 'center', }}>
+                  {
+                    tokens.map((link, index) => (
+                      <div key={index} style={{ marginBottom: '20px' }}>
+
+                        {/* {groupData && (
                          <div>
                            {Object.keys(groupData).map(key => (
                             <div key={key}>
@@ -1522,177 +1617,210 @@ function Adin() {
                                   <p>Serial Number ({key}): {groupData.serialNumber}</p>
                                   <p>Tariff ({key}): {groupData.tariff}</p>
                                     {/* Add more fields as needed */}
-                      {/* </div>
+                        {/* </div>
                            ))}
                           </div>
                           )} */}
 
-                      {/* Checkbox and Meter Serial */}
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-                        <input
-                          type="checkbox"
-                          id={`checkbox_${index}`}
-                          className='checkbox'
-                        />
-                        <div style={{ paddingLeft: '20px', margin: '5px' }}>
-                          <div >
-                            <div className='group_container'>
-                              <div style={{ marginLeft: '3px' }}>
-                                <img
-                                  className='Image'
-                                  src="https://img.icons8.com/3d-fluency/94/group--v4.png"
-                                  style={{ width: '45px', height: '45px', cursor: 'pointer' }}
-                                  alt="User Group Icon"
-                                />
-                              </div>
+                        {/* Checkbox and Meter Serial */}
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                          <input
+                            type="checkbox"
+                            id={`checkbox_${index}`}
+                            className='checkbox'
+                            disabled={loading}
+                          />
+                          <div style={{ paddingLeft: '20px', margin: '5px' }}>
+                            <div >
+                              <div className='group_container'>
+                                <div style={{ marginLeft: '3px' }}>
+                                  <img
+                                    className='Image'
+                                    src="https://img.icons8.com/3d-fluency/94/group--v4.png"
+                                    style={{ width: '45px', height: '45px', cursor: 'pointer' }}
+                                    alt="User Group Icon"
+                                  />
+                                </div>
 
-                              <div style={{ marginLeft: '8px' }}>
+                                <div style={{ marginLeft: '8px' }}>
 
-                                <p className='group_para_groupname'>Group Name: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).groupName.replace(/_/g, ' ')}</p>
-                                <p className='group_para_tariff'>Tariff Rate: ₹ {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).tariff}</p>
+                                  <p className='group_para_groupname'>Group Name: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).groupName.replace(/_/g, ' ')}</p>
+                                  <p className='group_para_tariff'>Tariff Rate: ₹ {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).tariff}</p>
 
+                                </div>
                               </div>
                             </div>
-                          </div>
 
 
 
-                          {/* {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']) && (
+                            {/* {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']) && (
                           <p>Tariff: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).tariff}</p> 
 
                           )} */}
 
-                          <div style={{ margin: '20px', marginLeft: '0' }}>
+                            <div style={{ margin: '20px', marginLeft: '0' }}>
 
-                            {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']) ? (
-                              <div style={{ display: 'flex', }} >
-                                {/* <p>Group Name: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).groupName}</p> */}
-                                {/* <p>Tariff: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).tariff}</p> */}
+                              {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']) ? (
+                                <div style={{ display: 'flex', }} >
+                                  {/* <p>Group Name: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).groupName}</p> */}
+                                  {/* <p>Tariff: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).tariff}</p> */}
 
-                                <div className='meter_serial_number'>
-                                  <p style={{  color: 'black',  }}  > Meter Serial:{decryptDataOfRequest(getToken(link))['srNo']}  </p>
-                                  {/* <p className='name2'> {decryptDataOfRequest(getToken(link))['srNo']}</p> */}
-                                </div>
-                                {/* <div className='paragraphDivesion'> 
+                                  <div className='meter_serial_number'>
+                                    <p style={{ color: 'black', }}  > Meter Serial:{decryptDataOfRequest(getToken(link))['srNo']}  </p>
+                                    {/* <p className='name2'> {decryptDataOfRequest(getToken(link))['srNo']}</p> */}
+                                  </div>
+                                  {/* <div className='paragraphDivesion'> 
                             <p className='name'>Name: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).name}</p>
                               </div> */}
 
-                                <div className='paragraphDivesion'>
-                                  <p className='name'>Name: </p>
-                                  <p className='name2'> {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).name} </p>
+                                  <div className='paragraphDivesion'>
+                                    <p className='name'>Name: </p>
+                                    <p className='name2'> {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).name} </p>
+                                  </div>
+
+                                  <div className='paragraphDivesion'>
+                                    <p className='name'>Location:  </p>
+                                    <p className='name2'>{getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).location}</p>
+                                  </div>
+
+                                  {/* <p style={{padding:'10px'}}>Group Name: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).groupName}</p> */}
+
+                                  <div className='paragraphDivesion'>
+                                    <p className='name'>Phone:  </p>
+                                    <p className='name2'> {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).phone}</p>
+
+                                  </div>
+                                  {/*  <p>Email : {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).email}</p> */}
+                                  <div className='paragraphDivesion'>
+                                    <p className='name'>Req Time :  </p>
+                                    <p className='name2'>{decryptDataOfRequest(getToken(link))['timeOfToken']}</p>
+                                  </div>
+
                                 </div>
+                              ) : (
+                                <p>Group information not found for Serial Number</p>
+                              )}
+                            </div>
+                          </div>
 
-                                <div className='paragraphDivesion'>
-                                  <p className='name'>Location:  </p>
-                                  <p className='name2'>{getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).location}</p>
-                                </div>
 
-                                {/* <p style={{padding:'10px'}}>Group Name: {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).groupName}</p> */}
+                        </div>
 
-                                <div className='paragraphDivesion'>
-                                  <p className='name'>Phone:  </p>
-                                  <p className='name2'> {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).phone}</p>
+                        {/* Input Fields in Rows of Four */}
+                        <div style={{ marginTop: '-4%' }}>
+                          <div style={{ display: 'flex', margin: '10px', flexDirection: 'row', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '10px', width: '100%' }}>
+                              <div style={{ flex: '1', margin: '10px' }}>
+                                <label style={{ marginBottom: '5px' }}>Recharge amount</label>
+                                <input
+                                  type='text'
+                                  // value={decryptDataOfRequest(getToken(link))['amount']}
 
-                                </div>
-                                {/*  <p>Email : {getGroupAndTariff(decryptDataOfRequest(getToken(link))['srNo']).email}</p> */}
-                                <div className='paragraphDivesion'>
-                                  <p className='name'>Req Time :  </p>
-                                  <p className='name2'>{decryptDataOfRequest(getToken(link))['timeOfToken']}</p>
-                                </div>
+                                  value={parseFloat(decryptDataOfRequest(getToken(link))['amount']).toFixed(2)}
 
+                                  className='form-control'
+                                  readOnly
+                                  placeholder="Amount"
+                                  disabled
+                                />
                               </div>
-                            ) : (
-                              <p>Group information not found for Serial Number</p>
-                            )}
-                          </div>
-                        </div>
+                              <div style={{ flex: '1', margin: '10px' }}>
+                                <label style={{ marginBottom: '5px' }}>Payment details</label>
+                                <input
+                                  type='text'
+                                  value={getPaymentMode(link)}
+                                  className='form-control'
+                                  readOnly
+                                  placeholder="Payment Mode"
+                                  disabled
+                                />
+                              </div>
+                              <div style={{ flex: '1', margin: '10px' }}>
+                                <label style={{ marginBottom: '5px' }}>Total kWh at time of request</label>
+                                <input
+                                  type='text'
 
+                                  value={parseFloat(decryptDataOfRequest(getToken(link))['kWh']).toFixed(2)}
 
-                      </div>
+                                  // value={decryptDataOfRequest(getToken(link))['kWh']}
+                                  className='form-control'
+                                  readOnly
+                                  disabled
 
-                      {/* Input Fields in Rows of Four */}
-                      <div style={{ marginTop: '-4%' }}>
-                        <div style={{ display: 'flex', margin: '10px', flexDirection: 'row', flexWrap: 'wrap' }}>
-                          <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '10px', width: '100%' }}>
-                            <div style={{ flex: '1', margin: '10px' }}>
-                              <label style={{ marginBottom: '5px' }}>Recharge amount</label>
-                              <input
-                                type='text'
-                                // value={decryptDataOfRequest(getToken(link))['amount']}
+                                  placeholder="kWm"
+                                />
+                              </div>
+                              <div style={{ flex: '1', margin: '10px' }}>
+                                <label style={{ marginBottom: '5px', width: '110%', display: 'flex' }}>Available balance at time request</label>
+                                <input
+                                  type='text'
+                                  // value={decryptDataOfRequest(getToken(link))['balance']}
+                                  value={parseFloat(decryptDataOfRequest(getToken(link))['balance']).toFixed(2)}
+                                  placeholder="Available Balance"
+                                  className='form-control'
+                                  readOnly
+                                  disabled
+                                />
+                              </div>
 
-                                value={parseFloat(decryptDataOfRequest(getToken(link))['amount']).toFixed(2)}
-
-                                className='form-control'
-                                readOnly
-                                placeholder="Amount"
-                                disabled
-                              />
                             </div>
-                            <div style={{ flex: '1', margin: '10px' }}>
-                              <label style={{ marginBottom: '5px' }}>Payment details</label>
-                              <input
-                                type='text'
-                                value={getPaymentMode(link)}
-                                className='form-control'
-                                readOnly
-                                placeholder="Payment Mode"
-                                disabled
-                              />
-                            </div>
-                            <div style={{ flex: '1', margin: '10px' }}>
-                              <label style={{ marginBottom: '5px' }}>Total kWh at time of request</label>
-                              <input
-                                type='text'
-
-                                value={parseFloat(decryptDataOfRequest(getToken(link))['kWh']).toFixed(2)}
-
-                                // value={decryptDataOfRequest(getToken(link))['kWh']}
-                                className='form-control'
-                                readOnly
-                                disabled
-
-                                placeholder="kWm"
-                              />
-                            </div>
-                            <div style={{ flex: '1', margin: '10px' }}>
-                              <label style={{ marginBottom: '5px', width: '110%', display: 'flex' }}>Available balance at time request</label>
-                              <input
-                                type='text'
-                                // value={decryptDataOfRequest(getToken(link))['balance']}
-                                value={parseFloat(decryptDataOfRequest(getToken(link))['balance']).toFixed(2)}
-                                placeholder="Available Balance"
-                                className='form-control'
-                                readOnly
-                                disabled
-                              />
-                            </div>
-
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                }
-                {/* < div style={{ textAlign: 'center', padding: '20px' }}>
+                    ))
+                  }
+                  {/* < div style={{ textAlign: 'center', padding: '20px' }}>
                 <button className="btn btn-primary" onClick={() => generatetokenData()}>Generate</button>
               </div> */}
-                {tokens.length > 0 && (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <button className="btn btn-primary" onClick={() => generatetokenData()}>Generate Token for selected meter</button>
-                  </div>
-                )}
+                  {tokens.length > 0 && (
+                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                      <button className="btn btn-primary" disabled={loading} onClick={() => generatetokenData()}>Generate Token for selected meter (s)</button>
+                    </div>
+                  )}
+
+                </div>
+
+
 
               </div>
-
-
-
             </div>
-          </div>
 
-        </div >
+          </div >
+
+
+
+        </>
 
       )}
 
+
+      <Modal show={isDialogOpenSavedata} onHide={closeDialogSavedata} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialogSavedata}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+
+      <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialog}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
     </>
 

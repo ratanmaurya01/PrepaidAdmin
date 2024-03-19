@@ -56,3 +56,56 @@
     font-size: 4px;
   }
 }
+
+
+/* toke Url  */
+
+
+.Tokenurl{
+
+  margin-left: 30%;
+  background-color: #e3f2fd;
+  width: 40%;
+  border-radius: 2px;
+box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Adjust shadow values as needed */
+}
+
+
+.Tokenurl  p{
+  
+   text-align: center;
+}
+
+.social_media_Icon {
+  display: flex;
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
+}
+
+.social_media_Icon p {
+  font-size: 15px;
+  font-weight: bold; 
+  margin-top: 3%;
+  margin-right: 10px; /* Add some space between text and icons */
+}
+
+
+
+
+@media only screen and (max-width: 768px) {
+  .Tokenurl {
+    margin-left: 30%; /* Center the element horizontally */
+    width: auto; /* Adjust width as needed */
+  }
+
+ 
+}
+
+
+.dropdown-toggle-icon-right::after {
+  margin-left: auto;
+}
+
+
+
+

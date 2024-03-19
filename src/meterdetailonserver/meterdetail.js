@@ -9,7 +9,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Modal, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import CommonFuctions from '../commonfunction';
+import CommonFuctions from '../commonfunction'; import { ref, set, get, child, getDatabase, onValue } from 'firebase/database';
 
 
 import { validatePhoneNumber, validateName, validateAddress, validateEmail } from '../validation/validation';
@@ -23,6 +23,7 @@ function Meterdetail() {
   const navigate = useNavigate();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [meterList, setMeterList] = useState([]);
   const [error, setError] = useState('');
   const [selectOptions, setSelectOptions] = useState([]);
@@ -79,6 +80,7 @@ function Meterdetail() {
           handlePhoneSerialList(numberPart);
           SessionValidate(numberPart);
           SessionUpdate(numberPart);
+          setLoading(false);
         }
       } else {
         setUser(null);
@@ -104,6 +106,8 @@ function Meterdetail() {
 
 
   const handleSearch = async (phoneNumber) => {
+
+
     const trimmedPhoneNumber = phoneNumber.trim();
     if (trimmedPhoneNumber !== '') {
       try {
@@ -314,131 +318,133 @@ function Meterdetail() {
   // };
 
 
-  
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     if (name === 'input1') {
-//         // Regular expression to match only alphanumeric characters and spaces
-//         const alphanumericRegex = /^[a-zA-Z0-9\s ]*$/;
 
-//         if (!alphanumericRegex.test(value) && value !== '') {
-//             setGroupNameError('Special characters not allowed.');
-//         }
-//         if (value.charAt(0) === ' ') {
+  //   const handleInputChange = (e) => {
+  //     const { name, value } = e.target;
+  //     if (name === 'input1') {
+  //         // Regular expression to match only alphanumeric characters and spaces
+  //         const alphanumericRegex = /^[a-zA-Z0-9\s ]*$/;
 
-//             return;
-//         }
-//         else {
-//             setGroupNameError('');
-//             setInputValues({ ...inputValues, [name]: value });
-//         }
-//     } else if (name === 'input2') {
-//         // Validation for input2 (Tariff Rate)
-//         const numericRegex = /^(?:[1-9]\d{0,1}(?:\.\d{0,2})?|99.99(?:\.00?)?)$/;
+  //         if (!alphanumericRegex.test(value) && value !== '') {
+  //             setGroupNameError('Special characters not allowed.');
+  //         }
+  //         if (value.charAt(0) === ' ') {
 
-//         if (numericRegex.test(value) || value === '') {
-//             setInputValues({ ...inputValues, [name]: value });
-//         } else {
-//             setTariffRateError('');
-//         }
-//     }
-// };
+  //             return;
+  //         }
+  //         else {
+  //             setGroupNameError('');
+  //             setInputValues({ ...inputValues, [name]: value });
+  //         }
+  //     } else if (name === 'input2') {
+  //         // Validation for input2 (Tariff Rate)
+  //         const numericRegex = /^(?:[1-9]\d{0,1}(?:\.\d{0,2})?|99.99(?:\.00?)?)$/;
 
-   
-const handleInputChange = (e) => {
-  const { name, value } = e.target;
-  if (name === 'input1') {
+  //         if (numericRegex.test(value) || value === '') {
+  //             setInputValues({ ...inputValues, [name]: value });
+  //         } else {
+  //             setTariffRateError('');
+  //         }
+  //     }
+  // };
+
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'input1') {
       // Regular expression to match only alphanumeric characters and spaces
       const alphanumericRegex = /^[a-zA-Z0-9\s ]*$/;
 
       if (!alphanumericRegex.test(value) && value !== '') {
-          setGroupNameError('Special characters not allowed.');
+        setGroupNameError('Special characters not allowed.');
       }
       if (value.charAt(0) === ' ') {
 
-          return;
+        return;
       }
       else {
-          setGroupNameError('');
-          setInputValues({ ...inputValues, [name]: value });
+        setGroupNameError('');
+        setInputValues({ ...inputValues, [name]: value });
       }
-  } else if (name === 'input2') {
+    } else if (name === 'input2') {
       // Validation for input2 (Tariff Rate)
       const numericRegex = /^(?:[1-9]\d{0,1}(?:\.\d{0,2})?|99.99(?:\.00?)?)$/;
 
       if (numericRegex.test(value) || value === '') {
-          setInputValues({ ...inputValues, [name]: value });
+        setInputValues({ ...inputValues, [name]: value });
       } else {
-          setTariffRateError('');
+        setTariffRateError('');
       }
-  }
-};
+    }
+  };
 
 
 
   const [groupNameError, setGroupNameError] = useState('');
   const [tariffRateError, setTariffRateError] = useState('');
 
- 
-  
+
+
   const handleAddClick = async () => {
+
+    setErrorMessagegroupname('');
 
     setTariffRateError('');
     try {
-        if (!inputValues.input1) {
-            // If input1 is empty, show an error message and return early
-            setGroupNameError("Enter group name. ");
-            return;
-        }
-        if (!inputValues.input2) {
-            // If input2 is empty, show an error message and return early
-            setTariffRateError("Enter tariff rate.");
-            return;
-        }
+      if (!inputValues.input1) {
+        // If input1 is empty, show an error message and return early
+        setGroupNameError("Enter group name. ");
+        return;
+      }
+      if (!inputValues.input2) {
+        // If input2 is empty, show an error message and return early
+        setTariffRateError("Enter tariff rate.");
+        return;
+      }
 
-        if (
-            inputValues.input2.startsWith(".") ||
-            inputValues.input2.startsWith("0.") ||
-            inputValues.input2.startsWith("00.") ||
-            inputValues.input2 === "0" ||
-            inputValues.input2 === "00" ||
-            inputValues.input2.endsWith(".")
-        ) {
-            // If any of the conditions are met, show an error message and return early
-            setTariffRateError("Invalid tariff rate");
-            return;
-        }
+      if (
+        inputValues.input2.startsWith(".") ||
+        inputValues.input2.startsWith("0.") ||
+        inputValues.input2.startsWith("00.") ||
+        inputValues.input2 === "0" ||
+        inputValues.input2 === "00" ||
+        inputValues.input2.endsWith(".")
+      ) {
+        // If any of the conditions are met, show an error message and return early
+        setTariffRateError("Invalid tariff rate");
+        return;
+      }
 
-        if (/^0(\.0{1,2})?$|^0\.99$/.test(inputValues.input2)) {
-            // If input2 is in the range, show an error message and return early
-            setTariffRateError("Invalid tariff.");
-            return;
-        }
-        const input2Value = inputValues.input2;
-        let updatedInput2Value = input2Value;
-        if (input2Value.includes('.') && input2Value.split('.')[1].length === 1) {
-            updatedInput2Value = input2Value + '0';
-        }
-        
-        const newOption = `${inputValues.input1} - ${inputValues.input2}`;
-        setDisplayedInput1(inputValues.input1);
+      if (/^0(\.0{1,2})?$|^0\.99$/.test(inputValues.input2)) {
+        // If input2 is in the range, show an error message and return early
+        setTariffRateError("Invalid tariff.");
+        return;
+      }
+      const input2Value = inputValues.input2;
+      let updatedInput2Value = input2Value;
+      if (input2Value.includes('.') && input2Value.split('.')[1].length === 1) {
+        updatedInput2Value = input2Value + '0';
+      }
 
-        setSelectedGroupName(inputValues.input1);
-        setShowInputs(false);
+      const newOption = `${inputValues.input1} - ${inputValues.input2}`;
+      setDisplayedInput1(inputValues.input1);
 
-        setDisplayedInput2(updatedInput2Value);
-        setInputValues({
-            input1: '',
-            input2: ''
-        });
+      setSelectedGroupName(inputValues.input1);
+      setShowInputs(false);
+
+      setDisplayedInput2(updatedInput2Value);
+      setInputValues({
+        input1: '',
+        input2: ''
+      });
 
 
-        setShowInputs(false);
+      setShowInputs(false);
     } catch (error) {
-        //  console.error('Error:', error);
-        // Handle error (e.g., show an error message to the user)
+      //  console.error('Error:', error);
+      // Handle error (e.g., show an error message to the user)
     }
-};
+  };
 
   // const handleAddClick = async () => {
   //   setErrorMessagegroupname('');
@@ -555,113 +561,202 @@ const handleInputChange = (e) => {
   }, [dateSelected]);
 
 
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+
+    // window.location.reload(); // This will reload the page
+  };
+
+
+  const [isDialogOpenSavedata, setIsDialogOpenSavedata] = useState(false);
+
+  const closeDialogSavedata = () => {
+    setIsDialogOpenSavedata(false);
+    setIsFormOpen(false); // Close the form after submission
+    window.location.reload();
+    // window.location.reload(); // This will reload the page
+  };
+
+
+  const [modalMessage, setModalMessage] = useState('');
+
+
   const handleFormSubmit = async (event) => {
 
-    const storeSessionId = localStorage.getItem('sessionId');
-    const { sessionId } = await cfunction.HandleValidatSessiontime(phoneNumber);
-    if (storeSessionId === sessionId) {
-
-
-
-
-      if (selectedGroupName === "") {
-        event.preventDefault();
-        setErrorMessagegroupname("Create or Select a group for the meter.");
-        // alert("Please enter a email");
-        return;
-      }
-      // if (selectedGroup === "") {
-      //   // event.preventDefault();
-      //   //setErrorMessagegroupname("Create or Select a group for the meter.");
-      //  alert("Please enter a email");
-      //   return;
-      // }
+    if (selectedGroupName === "") {
       event.preventDefault();
+      setErrorMessagegroupname("Create or Select a group for the meter.");
+      // alert("Please enter a email");
+      return;
+    }
 
-      // Retrieve form input values
-      const meterLocation = document.getElementById('inputEmail1').value;
-      const tariffRate = document.getElementById('inputEmail2').value;
-      const consumerName = document.getElementById('inputEmail3').value;
-      const consumerMobileNumber = document.getElementById('consumerMobileNumber').value;
-      // const consumerEmailAddress = document.getElementById('inputEmail5').value;
-      const dateOfOccupancy = document.getElementById('email').value;
-      const emailToSave = consumerEmail.trim() === '' ? 'na' : consumerEmail;
+    const meterLocation = document.getElementById('inputEmail1').value;
+    const tariffRate = document.getElementById('inputEmail2').value;
+    const consumerName = document.getElementById('inputEmail3').value;
+    const consumerMobileNumber = document.getElementById('consumerMobileNumber').value;
+    // const consumerEmailAddress = document.getElementById('inputEmail5').value;
+    const dateOfOccupancy = document.getElementById('email').value;
+    const emailToSave = consumerEmail.trim() === '' ? 'na' : consumerEmail;
 
-      if (meterLocation === "") {
-        setErrorMessagemeterlocation("Enter the consumer's meter location.");
-        // alert("Please enter a email");
-        return;
-      }
+    if (meterLocation === "") {
+      setErrorMessagemeterlocation("Enter the consumer's meter location.");
+      // alert("Please enter a email");
+      return;
+    }
 
-      if (consumerName === "") {
-        setErrorMessagename1("Enter the consumer's name.");
-        // alert("Please enter a email");
-        return;
-      }
-      if (consumerMobileNumber === "") {
-        setErrorMessagenumber("Enter a valid mobile number.");
-        // alert("Please enter a email");
-        return;
-      }
-      if (dateOfOccupancy === "") {
-        setErrorMessageedoo("Date canont be empty.");
-        // alert("Please enter a email");
-        return;
-      }
-      // if (meterLocation === '' || tariffRate === '' || consumerName === '' || consumerMobileNumber === '') {
-      //   // Handle validation error - one or more fields are empty
-      //   alert('Please fill in all required fields.');
-      //   return;
-      // }
-      // const groupName = displayedInput1 || selectedExistingGroupName;
-      const groupName = (displayedInput1 || selectedExistingGroupName).split(' ').join('_');
-      const selectedSerialNumber = selectedSerial; // Replace with actual selected serial number
+    if (consumerName === "") {
+      setErrorMessagename1("Enter the consumer's name.");
+      // alert("Please enter a email");
+      return;
+    }
 
-      // Prepare data object
-      const data = {
-        name: consumerName,
-        email: emailToSave,
-        location: meterLocation,
-        phone: consumerMobileNumber,
-        serial: selectedSerialNumber,
-        tariff: tariffRate,
-        doo: dateOfOccupancy,
-        // Add other fields as needed
-      };
-      // console.log("groupName before reference construction:", groupName);
+    if (consumerMobileNumber.length !== 10) {
+      setErrorMessagenumber('Enter valid mobile number.');
+      return;
+    }
 
-      // Get reference to Firebase database
-      const adminReference = firebase.database().ref(`/adminRootReference/tenantDetails/${phoneNumber}/${groupName}/${selectedSerialNumber}`);
+    if (consumerMobileNumber === "") {
+      setErrorMessagenumber("Enter a valid mobile number.");
+      // alert("Please enter a email");
+      return;
+    }
+    if (dateOfOccupancy === "") {
+      setErrorMessageedoo("Date canont be empty.");
+      // alert("Please enter a email");
+      return;
+    }
 
-      try {
+    setLoading(true);
+
+    const status = await cfunction.checkInternetConnection(); // Call the function
+    //  setShowChecker(status);
+    if (status === 'Poor connection.') {
+      setIsDialogOpen(true);
+      setModalMessage('No/Poor Internet connection. Cannot access server.');
+      setLoading(false);
+      /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+      return;
+      //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
+      //  return;
+    }
+
+
+
+    const storeSessionId = localStorage.getItem('sessionId');
+    try {
+      const { sessionId } = await cfunction.HandleValidatSessiontime(phoneNumber);
+      if (storeSessionId === sessionId) {
+
+        event.preventDefault();
+        // const groupName = displayedInput1 || selectedExistingGroupName;
+        const groupName = (displayedInput1 || selectedExistingGroupName).split(' ').join('_');
+        const selectedSerialNumber = selectedSerial; // Replace with actual selected serial number
+
+        // Prepare data object
+        const data = {
+          name: consumerName,
+          email: emailToSave,
+          location: meterLocation,
+          phone: consumerMobileNumber,
+          serial: selectedSerialNumber,
+          tariff: tariffRate,
+          doo: dateOfOccupancy,
+          // Add other fields as needed
+        };
+        // console.log("groupName before reference construction:", groupName);
+
+        // Get reference to Firebase database
+        //  const adminReference = firebase.database().ref(`/adminRootReference/tenantDetails/${phoneNumber}/${groupName}/${selectedSerialNumber}`);
+
+
+        const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+        const adminRootReference = ref(db, `adminRootReference/tenantDetails/${phoneNumber}/${groupName}/${selectedSerialNumber}`);
+        const fullAdminProfilePath = adminRootReference.toString();
+
+        const dataToSend = {
+          [fullAdminProfilePath]: data
+        };
+
+        try {
+          cfunction.callWriteRtdbFunction(dataToSend);
+
+          const tariffReference = firebase.database().ref(`/adminRootReference/tenantDetails/${phoneNumber}/${groupName}/tariff`);
+          await tariffReference.set(tariffRate);
+
+          setIsDialogOpenSavedata(true)
+          const errorMessage = `Data saved successfully!`;
+          setModalMessage(errorMessage);
+          setLoading(false);
+
+        }
+        catch (error) {
+
+          setLoading(false);
+          setIsDialogOpen(true);
+          const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+          setModalMessage(errorMessage);
+
+
+
+        }
+
+
+
+        // try {
         // Save data to Firebase
-        await adminReference.set(data);
-
+        //   await adminReference.set(data);
         // Update tariff rate in Firebase
-        const tariffReference = firebase.database().ref(`/adminRootReference/tenantDetails/${phoneNumber}/${groupName}/tariff`);
-        await tariffReference.set(tariffRate);
+        // const tariffReference = firebase.database().ref(`/adminRootReference/tenantDetails/${phoneNumber}/${groupName}/tariff`);
+        // await tariffReference.set(tariffRate);
 
         // Data saved successfully
-        console.log('Data saved to Firebase!');
-        alert('Data saved successfully!');
-        window.location.reload();
+        // console.log('Data saved to Firebase!');
+
+
+        //  alert('Data saved successfully!');
+        // setIsDialogOpenSavedata(true)
+        // const errorMessage = `Data saved successfully!`;
+        // setModalMessage(errorMessage);
+
+
         // Optionally, perform any additional actions upon successful data save
-      } catch (error) {
-        // Handle errors
-        console.error('Error saving data to Firebase: ', error);
-        // Optionally, display an error message or handle the error condition
+        // } catch (error) {
+        //   // Handle errors
+        //   console.error('Error saving data to Firebase: ', error);
+        //   // Optionally, display an error message or handle the error condition
+        // }
+      } else {
+
+        alert("You have been logged-out due to log-in from another device.");
+        // console.log('you are logg out ');
+        handleLogout();
       }
 
+    } catch (error) {
 
+      setLoading(false);
+      setIsDialogOpen(true);
+      // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+      const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
+      setModalMessage(errorMessage);
 
-    } else {
-
-      alert("You have been logged-out due to log-in from another device.");
-      // console.log('you are logg out ');
-      handleLogout();
     }
-    setIsFormOpen(false); // Close the form after submission
+
+
+
+
+
+
+    // setIsFormOpen(false); // Close the form after submission
+
+
+
+
   };
+
 
 
 
@@ -730,9 +825,6 @@ const handleInputChange = (e) => {
       setErrorMeter("");
     }
   };
-
-
-
 
 
   const [errorName, setErrorName] = useState('');
@@ -927,6 +1019,8 @@ const handleInputChange = (e) => {
     cfunction.updateSessionTimeActiveUser(numberPart);
   }
 
+
+
   return (
 
     <>
@@ -974,7 +1068,25 @@ const handleInputChange = (e) => {
 
         </div>
 
-        <Modal show={isFormOpen} onHide={handleClose}    backdrop="static">
+        {/* {loading ? (
+          <div style={{ marginLeft: '35%', marginTop: '10%%' }}>
+            <div className="spinner-border text-danger" role="status">
+              <span className="sr-only"></span>
+            </div>
+          </div>
+        ) : ( */}
+
+
+        {loading ? (
+          <div style={{ position: 'fixed', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
+            <div className="spinner-border text-danger" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        ) : null}
+
+
+        <Modal show={isFormOpen} onHide={handleClose} backdrop="static">
           <Modal.Header closeButton>
             <Modal.Title>Add Details </Modal.Title>
           </Modal.Header>
@@ -993,7 +1105,6 @@ const handleInputChange = (e) => {
                         onChange={(e) => setSelectedSerial(e.target.value)}
                         disabled
                       />
-
                     </div>
                     {/* Check Data */}
                     <div className="col-md-6">
@@ -1009,6 +1120,7 @@ const handleInputChange = (e) => {
                           style={{ width: '100%', paddingRight: '30px' }} // Adjusted width for responsiveness
                           value={getInputValue()} // Call the function to determine input value
                           onChange={handleSelectChange}
+                          disabled={loading}
                         />
                         <span
                           className="position-absolute top-50 end-0 translate-middle-y"
@@ -1122,8 +1234,6 @@ const handleInputChange = (e) => {
                 </div>
 
 
-
-
                 <div class="col-md-6 mb-3">
                   <label for="inputEmail1" class="form-label">Meter Location</label>
                   <input type="text"
@@ -1135,6 +1245,7 @@ const handleInputChange = (e) => {
                     value={meterLocation}
                     onChange={handleInputMeterChange}
                     maxLength={40}
+                    disabled={loading}
 
 
                   />
@@ -1155,6 +1266,7 @@ const handleInputChange = (e) => {
                     placeholder="Tariff Rate"
                     aria-label="Tariff Rate"
                     value={displayedInput2}
+                    disabled={loading}
                   />
                   {/* )} */}
                 </div>
@@ -1170,6 +1282,7 @@ const handleInputChange = (e) => {
                     maxLength={20}
                     value={consumerName}
                     onChange={handleInputNameChange}
+                    disabled={loading}
 
                   />
 
@@ -1189,6 +1302,7 @@ const handleInputChange = (e) => {
                     value={consumerMobileNumber}
                     onChange={handleMobileNumberChange}
                     maxLength={10} // Set maximum length to 10 characters
+                    disabled={loading}
                   />
 
                   {errroPhone && (
@@ -1211,6 +1325,7 @@ const handleInputChange = (e) => {
                     aria-label="Email Address"
                     value={consumerEmail}
                     onChange={handleEmailChange}
+                    disabled={loading}
                   />
 
                   {errorEmail && (
@@ -1232,6 +1347,7 @@ const handleInputChange = (e) => {
                       onClick={handleIconClick}
                       ref={dateInputRef}
                       value={selectedDate ? formatDate(selectedDate) : ''}
+                      disabled={loading}
 
                     />
                     <div className="date-picker-wrapper">
@@ -1263,7 +1379,10 @@ const handleInputChange = (e) => {
                 <div className='col-12'>
                   {/* Submit button for the entire form */}
                   <div className="d-grid gap-2  col-4 mx-auto my-3 py-2">
-                    <button className="btn btn-primary" onClick={handleFormSubmit}>Add</button>
+                    <button className="btn btn-primary"
+                      onClick={handleFormSubmit}
+                      disabled={loading}
+                    >Add</button>
                   </div>
                 </div>
 
@@ -1274,7 +1393,38 @@ const handleInputChange = (e) => {
 
           </Modal.Body>
         </Modal>
+
       </div >
+
+      <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialog}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+      <Modal show={isDialogOpenSavedata} onHide={closeDialogSavedata} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialogSavedata}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+
     </>
 
   );

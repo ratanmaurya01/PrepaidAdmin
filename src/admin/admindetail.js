@@ -13,6 +13,11 @@ import { Modal, Button } from 'react-bootstrap';
 import CommonFuctions from '../commonfunction';
 import CheckNetwork from './checkconnection';
 import firebase from '../firebase';
+import checkInternetConnection from '../commonfunction';
+import UseConfirmBeforeLeave from '../Browserleave/leavebroser'
+import PopupDialog from '../userInterface/Modelpop';
+
+
 
 import 'firebase/auth';
 import 'firebase/database';
@@ -22,6 +27,7 @@ import { validatePhoneNumber, validateName, validateAddress, validateEmail } fro
 
 
 function Admindetail() {
+
     const navigate = useNavigate();
     const [user, setUser] = useState(null); // State to hold user information
     const [loading, setLoading] = useState(true); // State to track loading status
@@ -36,7 +42,6 @@ function Admindetail() {
     const [newPhone, setNewPhone] = useState('');
     const [initialEmail, setInitialEmail] = useState('');
     const [originalPhoneNo2, setOriginalPhoneNo2] = useState('');
-    const [error, setError] = useState('');
     const [phoneerror, setPhoneError] = useState('');
     const [errorAddres, setErrorAddress] = useState('');
     const [errorName, setErrorName] = useState('');
@@ -46,93 +51,12 @@ function Admindetail() {
     const [erronphoneMessage, setErrorPhoneMessage] = useState('');
     const sessionTime = new CommonFuctions();
     const [onlineStatus, setOnlineStatus] = useState(null);
-    const [password , setPassword] =useState('');
-    const [key , setKey] =useState('');
+    const [password, setPassword] = useState('');
+    const [key, setKey] = useState('');
+    const [modalMessage, setModalMessage] = useState('');
+    const [modalMessage1, setModalMessage1] = useState('');
 
 
-
-
-
-    // useEffect(() => {
-    //     const checkInter = async () => {
-    //         const result = await sessionTime.isCheckInterNet();
-    //         setOnlineStatus(result);
-
-    //         // If no internet and already loading, automatically switch to show no internet after 5 seconds
-    //         if (!result && loading) {
-    //             setTimeout(() => {
-    //                 setLoading(false);
-    //             }, 5000); // 5 seconds
-    //         }
-    //         // If internet is poor, set a longer timeout before showing no internet
-    //         else if (!result && !loading) {
-    //             setTimeout(() => {
-    //                 setLoading(false);
-    //             }, 5000); // 5 seconds
-    //         }
-    //     };  
-    //     // Call checkInter function initially
-    //     checkInter();
-    //     // Set up an interval to check internet status periodically
-    //     const interval = setInterval(checkInter, 5000); // Check every 5 seconds
-
-    //     // Clean up interval on component unmount
-    //     return () => clearInterval(interval);
-    // }, [loading]); // Include loading in dependencies array to listen for its changes
-
-
-
-    // useEffect(() => {
-    //     const checkInter = async () => {
-    //         const result = await sessionTime.isCheckInterNet();
-    //         setOnlineStatus(result);
-
-    //       //   If no internet and already loading, automatically switch to show no internet after 5 seconds
-    //         if (!result && loading) {
-    //             setTimeout(() => {
-    //                 setLoading(false);
-    //             }, 5000); // 5 seconds
-    //         }
-    //     };
-
-    //     // Call checkInter function initially
-    //     checkInter();
-    //     // Set up an interval to check internet status periodically
-    //     const interval = setInterval(checkInter, 5000); // Check every 5 seconds
-
-    //     // Clean up interval on component unmount
-    //     return () => clearInterval(interval);
-    // }, [loading]); // Include loading in dependencies array to listen for its changes
-
-
-
-
-
-
-    // useEffect(() => {
-    //     checkInter();
-    //   }, []); // Empty dependency array ensures it runs only once when the component mounts
-
-
-    // const checkInter = () => {
-    //     const result = sessionTime.isCheckInterNet();
-    //   //  console.log("Online status:", result)
-
-    //     if (result )
-    //     {
-
-    //        alert('online');
-    //        return;
-
-    //     }
-    //     else {
-
-    //        alert('Ofline');
-    //        return;
-
-
-    //     }
-    // }
 
 
     useEffect(() => {
@@ -152,8 +76,7 @@ function Admindetail() {
                     //  console.log("Extracted number:", number);
                     setPhoneNumber(number); // Set extracted number in state
                     fetchEmailFromFirebase(number);
-
-                    //  updateSessionActiveTime(number);
+                    updateSessionActiveTime(number);
                 }
             } else {
                 // No user is logged in, you can redirect to another page or handle accordingly
@@ -280,6 +203,7 @@ function Admindetail() {
     };
 
 
+
     const handlePhoneChange = (event) => {
         setErrorPhoneMessage('');
         const value = event.target.value.replace(/\D/g, ''); // Remove non-digits
@@ -322,13 +246,10 @@ function Admindetail() {
     //     }
     // };
 
-
-
     const callCloudFunction = async (path) => {
         try {
             // Call the cloud function
             const readRtdb = firebase.functions().httpsCallable('readRtdb');
-            
             // Promise that resolves after 5 seconds
             const timeoutPromise = new Promise((resolve, reject) => {
                 setTimeout(() => {
@@ -342,67 +263,77 @@ function Admindetail() {
             return response.data;
         } catch (error) {
             if (error.message === 'Timeout') {
-               
+
             } else {
-               alert('Poor internet connection! Please retry2.', error);
+                //  alert(`'Poor internet connection! Please retry....' ${error}`);
             }
         }
     };
 
-    
 
     const fetchEmailFromFirebase = async (storedPhoneNumber) => {
+        const status = await sessionTime.checkInternetConnection(); // Call the function
+        //  setShowChecker(status);
+        if (status === 'Poor connection.') {
+            setIsDialogOpen(true);
+            setModalMessage('No/Poor Internet connection. Cannot access server.');
+            setLoading(false);
+            /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+            return;
+            //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
+            //  return;
+        }
         const result = sessionTime.isCheckInterNet();
         if (result) {
-            try{
-        const db = getDatabase();
-        const adminRootReference = ref(db, `adminRootReference/adminDetails/${storedPhoneNumber}/adminProfile`);
-        const path = adminRootReference.toString();
-        const data = await callCloudFunction(path);
-       // console.log('Friebase_data :', data);
-        const parsedData = JSON.parse(data);
-        // onValue(adminRootReference, (snapshot) => {
-        //     const data = snapshot.val();
-        if (parsedData) {
-            //   console.log("Data from Firebase:", data);
-            setNewName(parsedData.name === 'null' ? '' : parsedData.name || '');
-            setName(parsedData.name === 'null' ? '' : parsedData.name || '');
-            setEmail(parsedData.email || '');
-            setNewEmail(parsedData.email || '');
-            setPassword(parsedData.password || '');
-            setKey(parsedData.key || '');
-            setAddress(parsedData.address === 'null' ? '' : parsedData.address || '');
-            setNewAddress(parsedData.address === 'null' ? '' : parsedData.address || '');
-            setPhoneNo2(parsedData.phoneNo2 === 'null' ? '' : parsedData.phoneNo2 || '');
-            setNewPhone(parsedData.phoneNo2 === 'null' ? '' : parsedData.phoneNo2 || '');
-            // Set other state variables similarly for other fields
-            setLoading(false); // Hide loader after data is fetched
-            // Data not found in Firebase
-        } else {
-            //  console.log("Data not found in Firebase.");
-            setLoading(false); // Hide loader
+
+            try {
+                const db = getDatabase();
+                const adminRootReference = ref(db, `adminRootReference/adminDetails/${storedPhoneNumber}/adminProfile`);
+                const path = adminRootReference.toString();
+                const data = await callCloudFunction(path);
+                // console.log('Friebase_data :', data);
+                const parsedData = JSON.parse(data);
+                // onValue(adminRootReference, (snapshot) => {
+                //     const data = snapshot.val();
+                if (parsedData) {
+                    //   console.log("Data from Firebase:", data);
+                    setNewName(parsedData.name === 'null' ? '' : parsedData.name || '');
+                    setName(parsedData.name === 'null' ? '' : parsedData.name || '');
+                    setEmail(parsedData.email || '');
+                    setNewEmail(parsedData.email || '');
+                    setPassword(parsedData.password || '');
+                    setKey(parsedData.key || '');
+                    setAddress(parsedData.address === 'null' ? '' : parsedData.address || '');
+                    setNewAddress(parsedData.address === 'null' ? '' : parsedData.address || '');
+                    setPhoneNo2(parsedData.phoneNo2 === 'null' ? '' : parsedData.phoneNo2 || '');
+                    setNewPhone(parsedData.phoneNo2 === 'null' ? '' : parsedData.phoneNo2 || '');
+                    // Set other state variables similarly for other fields
+                    // Set other state variables similarly for other fields
+                    setLoading(false); // Hide loader after data is fetched
+                    // Data not found in Firebase
+                } else {
+                    //  console.log("Data not found in Firebase.");
+                    setLoading(false); // Hide loader
+                }
+
+            } catch (error) {
+                console.error(error); // Log the error
+
+                //  alert(`Poor internet connection! Please retry. ( ${error}`);
+                setLoading(false); // Hide loader
+            }
+            // });
+            // } else {
+            //     console.log("Offline ");
+            // setOnlineStatus(result);
+            /// alert(" No internet connection ");
         }
-    
-    } catch (error) {
-        console.error(error); // Log the error
-      
-        alert('Poor internet connection! Please retry.');
-        setLoading(false); // Hide loader
-    }
-    // });
-        // } else {
-        //     console.log("Offline ");
-           // setOnlineStatus(result);
-      /// alert(" No internet connection ");
+        else {
+            setOnlineStatus(result);
+            // alert(" No internet connection ");
         }
-     else {
-        setOnlineStatus(result);
-        // alert(" No internet connection ");
-    }
 
     };
-
-
 
     const saveButtonClick = () => {
         console.log("Phone Number:", phoneNumber);
@@ -431,118 +362,210 @@ function Admindetail() {
         }
     };
 
-
-    // const callWriteRtdbFunction = async (data) => {
-
-    //     console.log('alll DAta ', data);
-    //     try {
-    //         // Initialize the callable function
-    //         const writeRtdb = firebase.functions().httpsCallable('writeRtdb');
-    //         // Call the function with the provided data
-    //         const response = await writeRtdb(data);
-    //         // Log the response from the cloud function
-    //         console.log(response.data);
-    //         alert(' Data updated successfully! ');
-    //         // Return the response data if needed
-    //         return response.data;
-    //     } catch (error) {
-    //         // Handle errors
-    //         console.error('Error calling writeRtdb function:', error);
-    //         throw error;
-    //     }
-    // };
-
-
-
-
-    // const callWriteRtdbFunction = async (data) => {
-    //     try {
-    //         // Initialize the callable function
-    //         const writeRtdb = firebase.functions().httpsCallable('writeRtdb');
-    //         // Call the function with the provided data
-    //         const response = await writeRtdb(data);
-    //         // Log the response from the cloud function
-    //         console.log(response.data);
-    //         alert(' Data updated successfully! ');
-    //         // Return the response data if needed
-    //         return response.data;
-    //     } catch (error) {
-    //         // Handle errors
-    //         console.error('Error calling writeRtdb function:', error);
-    //         // Schedule to display error alert after 5 seconds
-    //         setTimeout(() => {
-    //             if (error.message) {
-    //                 alert('Failed to update data: ' + error.message);
-    //             } else {
-    //                 alert('Failed to update data.');
-    //             }
-    //         }, 5000); // 5000 milliseconds = 5 seconds
-    //         throw error;
-    //     }
-    // };
-
-
     const callWriteRtdbFunction = async (data) => {
         try {
-            // Initialize the callable function
             const writeRtdb = firebase.functions().httpsCallable('writeRtdb');
-            // Promise that resolves after 5 seconds
-            const timeoutPromise = new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    reject(new Error('Timeout'));
-                }, 5000); // 5 seconds
-            });
-            // Call the function with the provided data
-            const response = await Promise.race([writeRtdb(data), timeoutPromise]);
-            // Log the response from the cloud function
-            console.log(response.data);
-            alert('Data updated successfully!');
-            // Return the response data if needed
+            const response = await writeRtdb(data);
             return response.data;
         } catch (error) {
-            console.error('Error calling writeRtdb function:', error);
-            if (error.message === 'Timeout') {
-                alert('Poor internet connection! Please retry1.');
-            } else {
-                // Handle other errors
-                alert('Poor internet connection! Please retry3.');
-                throw error;
-            }
+
+            throw error;
         }
     };
+
+    // sessionTime.updateSessionTimeActiveUser(phoneNumber);
+
+
+    // const callWriteRtdbFunction = async (data) => {
+    //     let successWithinTimeout = false;
+    //     try {
+    //         const writeRtdb = firebase.functions().httpsCallable('writeRtdb');
+
+    //         const timeoutPromise = new Promise((resolve, reject) => {
+    //             setTimeout(() => {
+    //                 reject(new Error('Timeout'));
+    //             }, 5000); // 5 seconds
+    //         });
+
+    //         const response = await Promise.race([writeRtdb({ data: data }), timeoutPromise]);
+    //         // Handle the response
+    //         console.log('Fetched data from Firebase:', response.data);
+    //         alert('Data updated successfully within 5 seconds!');
+    //         successWithinTimeout = true;
+    //         // Return the response data if needed
+    //         return response.data;
+    //     } catch (error) {
+    //         // Handle errors
+    //         if (!successWithinTimeout) {
+    //             alert(`Error calling writeRtdb function within 5 seconds: ${error}`);
+    //             throw error;
+    //         } else {
+    //             alert(`Error calling writeRtdb function after 5 seconds: ${error}`);
+    //             throw error;
+    //         }
+    //     }
+    // };
 
     const saveDataOnFirebase = async () => {
-
-     updateSessionActiveTime();
-    
-        const adminProfilePath = `adminRootReference/adminDetails/${phoneNumber}/adminProfile`;
-
-        const fullAdminProfilePath = `https://mij-prepaid-meter-default-rtdb.firebaseio.com/${adminProfilePath}`;
-        try {
-            const newData = {
-                address: newAddress === '' ? 'null' : newAddress, // Retain the existing address
-                email: newEmail || '', // Replace '' with a default value if needed
-                key: key, // Retain the existing key
-                name: newName === '' ? 'null' : newName, // Replace '' with a default value if needed
-                password: password, // Retain the existing password
-                phoneNo: phoneNumber || '', // Replace '' with a default value if needed
-                phoneNo2: newPhone === '' ? 'null' : newPhone, // Replace '' with a default value if needed
-                // Add other fields as needed
-            };
-
-            const dataToSend = {
-                [fullAdminProfilePath]: newData // Wrap your data in an object with the appropriate path key
-            };
-
-            const resu = await callWriteRtdbFunction(dataToSend);
-            console.log("write result", resu);
-
-            /// alert('Data updated successfully!');
-            window.location.reload();
-        } catch (error) {
-           alert('Failed to update data. Please try again4.');
+        setLoading(true);
+        setDataSaved(true); // Mark data as saved
+        const status = await sessionTime.checkInternetConnection(); // Call the function
+        if (status === 'Poor connection.') {
+            setIsDialogOpen(true);
+            setModalMessage('No/Poor Internet connection. Cannot access server.');
+            setLoading(false);
+            return;
         }
-    };
+        const result = sessionTime.isCheckInterNet();
+        if (result) {
+            setLoading(true);
+            const storeSessionId = localStorage.getItem('sessionId');
+            try {
+                const { sessionId } = await sessionTime.HandleValidatSessiontime(phoneNumber);
+                if (storeSessionId === sessionId) {
+                    // Update Session
+                    const adminProfilePath = `adminRootReference/adminDetails/${phoneNumber}/adminProfile`;
+                    const fullAdminProfilePath = `https://mij-prepaid-meter-default-rtdb.firebaseio.com/${adminProfilePath}`;
+                    const newData = {
+                        address: newAddress === '' ? 'null' : newAddress,
+                        email: newEmail || '',
+                        key: key,
+                        name: newName === '' ? 'null' : newName,
+                        password: password,
+                        phoneNo: phoneNumber || '',
+                        phoneNo2: newPhone === '' ? 'null' : newPhone,
+                        // Add other fields as needed
+                    };
+                    const dataToSend = {
+                        [fullAdminProfilePath]: newData
+                    };
+                    try {
+                        await callWriteRtdbFunction(dataToSend);
+
+                        setModalMessage1('Data Saved Successfully.');
+                        setIsDialogOpen1(true)
+                        setLoading(false);
+
+                    }
+                    catch (error) {
+
+                        setLoading(false);
+                        setIsDialogOpen(true);
+                        const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                        setModalMessage(errorMessage);
+
+                    }
+
+                } else {
+                    setLoading(false);
+                    alert("You have been logged out due to login from another device.");
+                    // handleLogout();
+                }
+            } catch (error) {
+                setLoading(false);
+
+                setIsDialogOpen(true);
+                // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+
+                const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
+
+                setModalMessage(errorMessage);
+            }
+        } else {
+            setOnlineStatus(result);
+        }
+    }
+
+    // start here 
+
+    // const saveDataOnFirebase = async () => {
+
+    //     const result = sessionTime.isCheckInterNet();
+    //     if (result) {
+
+    //         setLoading(true);
+
+    //         const storeSessionId = localStorage.getItem('sessionId');
+    //         const { sessionId } = await sessionTime.HandleValidatSessiontime(phoneNumber);
+    //         if (storeSessionId === sessionId) {
+    //          // Update Session
+    //             const adminProfilePath = `adminRootReference/adminDetails/${phoneNumber}/adminProfile`;
+    //             const fullAdminProfilePath = `https://mij-prepaid-meter-default-rtdb.firebaseio.com/${adminProfilePath}`;
+    //             try {
+    //                 const newData = {
+    //                     address: newAddress === '' ? 'null' : newAddress, // Retain the existing address
+    //                     email: newEmail || '', // Replace '' with a default value if needed
+    //                     key: key, // Retain the existing key
+    //                     name: newName === '' ? 'null' : newName, // Replace '' with a default value if needed
+    //                     password: password, // Retain the existing password
+    //                     phoneNo: phoneNumber || '', // Replace '' with a default value if needed
+    //                     phoneNo2: newPhone === '' ? 'null' : newPhone, // Replace '' with a default value if needed
+    //                     // Add other fields as needed
+    //                 };
+    //                 const dataToSend = {
+    //                     [fullAdminProfilePath]: newData // Wrap your data in an object with the appropriate path key
+    //                 };
+    //                 await callWriteRtdbFunction(dataToSend);
+
+    //                 //  console.log("write result", resu);
+    //                 setSuccessMessage(true);
+    //                 setLoading(false); // Disable loader after displaying the alert
+
+    //             } catch (error) {
+    //                 setLoading(false);
+    //                 console.log(' can not react from firebase .');
+    //                 // alert('Unable to connect server. Please retry .');
+    //                ///   alert(`Unable to connect server: Please retry.(${error})` );
+    //                 //   return ;
+    //             }
+    //         } else {
+    //             setLoading(false);
+    //             alert("You have been logged out due to login from another device.");
+    //             // console.log('you are logged out ');
+    //             handleLogout();
+    //         }
+    //     } else {
+    //         setOnlineStatus(result);
+    //     }
+    // }
+
+    //   End here
+
+    // const saveDataOnFirebase = async () => {
+
+
+
+    //     setLoading(true);
+
+    //         //  Update Session 
+
+    //     sessionTime.updateSessionTimeActiveUser(phoneNumber);
+
+    //     const adminProfilePath = `adminRootReference/adminDetails/${phoneNumber}/adminProfile`;
+    //     const fullAdminProfilePath = `https://mij-prepaid-meter-default-rtdb.firebaseio.com/${adminProfilePath}`;
+    //     try {
+    //         const newData = {
+    //             address: newAddress === '' ? 'null' : newAddress, // Retain the existing address
+    //             email: newEmail || '', // Replace '' with a default value if needed
+    //             key: key, // Retain the existing key
+    //             name: newName === '' ? 'null' : newName, // Replace '' with a default value if needed
+    //             password: password, // Retain the existing password
+    //             phoneNo: phoneNumber || '', // Replace '' with a default value if needed
+    //             phoneNo2: newPhone === '' ? 'null' : newPhone, // Replace '' with a default value if needed
+    //             // Add other fields as needed
+    //         };
+    //         const dataToSend = {
+    //             [fullAdminProfilePath]: newData // Wrap your data in an object with the appropriate path key
+    //         };
+    //         const resu = await callWriteRtdbFunction(dataToSend);
+    //         console.log("write result", resu);
+
+    //         /// alert('Data updated successfully!');
+    //       //  window.location.reload();
+    //     } catch (error) {
+    //        alert('Failed to update data. Please try again4.');
+    //     }
+    // };
 
 
     // const callWriteRtdbFunction = async (data) => {
@@ -618,17 +641,9 @@ function Admindetail() {
     //     }
     // }
 
+
     const handlesaveButton = async () => {
-        const result = sessionTime.isCheckInterNet();
-        if (result) {
 
-
-      //  console.log("save clicked")
-
-        const storeSessionId = localStorage.getItem('sessionId');
-        const { sessionId } = await sessionTime.HandleValidatSessiontime(phoneNumber);
-        if (storeSessionId === sessionId) {
-       //  console.log('SessionId Match ');
 
         if (newPhone === phoneNumber) {
             // If phoneNo2 matches the extracted number, handle the error
@@ -641,7 +656,6 @@ function Admindetail() {
             setErrorPhoneMessage("Enter valid number.");
             return;
         }
-
 
         if (newName === "") {
             // Case 1: Name is empty
@@ -747,61 +761,19 @@ function Admindetail() {
             //  console.log("address changed");
             saveDataOnFirebase();
 
-
         }
         else {
-            alert("No change in existing data.")
-        }
 
-        // else if (newName !== name || newAddress !== address) {
-        //     // Case 3: Name or address changed
-        //     console.log("Name or address changed");
-        //     // saveDataOnFirebase();
-        // } else if (newName !== name && newAddress !== address && newEmail !== email) {
-        //     // Case 4: All three (name, address, and email) change
-        //     navigate('/emailsendotp', { state: { newEmail } });}
-        //     else if (newEmail !== email && newPhone !== phoneNo2) {
-        //     // Case 5: Name or address and email and phone change
-        //     navigate('/phoneemailotp', { state: { newPhone, newEmail } });
-        // } else if (newName !== name || newAddress !== address || newEmail !== email) {
-        //     // Case 6: Name or address and email change
-        //     navigate('/emailsendotp', { state: { newEmail } });
-        // } else if (newName !== name || newAddress !== address || newPhone !== phoneNo2) {
-        //     // Case 7: Name or address and phone change
-        //     navigate('/sendphoneotp', { state: { newPhone } });
-        // } 
-        // else {
-        //     alert("No changes in existing data");
-        //     console.log("No changes detected");
-
-        // }
-
-
-        } else {
-
-            alert("You have been logged-out due to log-in from another device.");
-            // console.log('you are logg out ');
-            handleLogout();
-        }
-
-
-
-        } else {
-            setOnlineStatus(result);
-            // alert(" No internet connection ");
+            setIsDialogOpen(true);
+            setModalMessage('No change in existing data');
+            // alert("No change in existing data.")
         }
 
     }
 
-
-
-
-    const updateSessionActiveTime = () => {
-
+    const updateSessionActiveTime = (phoneNumber) => {
         sessionTime.updateSessionTimeActiveUser(phoneNumber);
     }
-
-
 
     // const SessionValidate = async () => {
     //     const storeSessionId = localStorage.getItem('sessionId');
@@ -815,7 +787,6 @@ function Admindetail() {
     //     }
     // };
 
-
     const history = useNavigate();
     const handleLogout = () => {
         auth.signOut().then(() => {
@@ -828,36 +799,72 @@ function Admindetail() {
 
     }
 
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+    const openDialog = () => {
+        setIsDialogOpen(true);
+    };
+
+    const closeDialog = () => {
+        setIsDialogOpen(false);
+        // window.location.reload(); // This will reload the page
+    };
+
+
+    const [isDialogOpen1, setIsDialogOpen1] = useState(false);
+
+    const openDialog1 = () => {
+        setIsDialogOpen(true);
+    };
+
+    const closeDialog1 = () => {
+        setIsDialogOpen(false);
+        window.location.reload(); // This will reload the page
+    };
+
+    // if Check when save data then at a time  Back Button or close tag  ...
+
+    const [dataSaved, setDataSaved] = useState(false); // Track if data has been saved
+    UseConfirmBeforeLeave(dataSaved);
+
+
+
+    const loadingStyle = {
+        pointerEvents: loading ? 'none' : 'auto', // Disable pointer events if loading, otherwise enable
+    };
 
     return (
         <>
-            <Navbar />
 
+            <div style={loadingStyle}>
 
+                <Navbar  style={{ pointerEvents: 'none' }} />
 
-            <>
-                {onlineStatus !== null && onlineStatus === false ? (
-                    <div style={{ textAlign: 'center', marginTop: '20%' }}>
-
-                        <h3>No Internet Connection</h3>
-                    </div>
-                ) : (
-
-                    <>
-                        {loading ? (
+                <>
+                    {onlineStatus !== null && onlineStatus === false ? (
+                        <div style={{ textAlign: 'center', marginTop: '20%' }}>
+                            <h3>No Internet Connection</h3>
+                        </div>
+                    ) : (
+                        <>
+                            {/* {loading ? (
                             <div style={{ textAlign: 'center', marginTop: '20%' }}>
-
-                                <div class="spinner-border text-danger" role="status">
-                                    <span class="sr-only"></span>
+                                <div className="spinner-border text-danger" role="status">
+                                    <span className="sr-only"></span>
                                 </div>
                             </div>
+                        ) : ( */}
 
-
-                        ) : (
-
+                            {loading ? (
+                                <div style={{ position: 'fixed', top: '60%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
+                                    <div className="spinner-border text-danger" role="status">
+                                        <span className="sr-only">Loading...</span>
+                                    </div>
+                                </div>
+                            ) : null}
 
                             <div className='containers' style={{ marginTop: '6%', marginBottom: '5px' }} >
+
                                 <div style={{ marginTop: '1px' }} >
                                     <div style={{ marginTop: '1px' }} className='AdminPhoto'>
                                         <img
@@ -866,9 +873,8 @@ function Admindetail() {
                                             alt="adminprofile"
                                         />
                                     </div>
-
                                     <div className='style'>
-                                        <p style={{ textAlign: 'center', marginBottom: '5px' }}> <Createtime /></p>
+                                        <p style={{ textAlign: 'center', marginBottom: '5px' }}> < Createtime /></p>
                                     </div>
                                 </div>
                                 <div className='formgroup'>
@@ -884,7 +890,6 @@ function Admindetail() {
                                                 readOnly
                                                 disabled
                                             />
-
                                             <i class="fas fa-phone"></i>
                                         </div>
                                     </div>
@@ -898,6 +903,7 @@ function Admindetail() {
                                                 value={newName !== null ? newName : name}
                                                 onChange={handleNameChange}
                                                 maxLength={20}
+                                                disabled={loading}
 
                                             />
                                             <i class="fa-solid fa-user"></i>
@@ -915,6 +921,7 @@ function Admindetail() {
                                                 placeholder="email"
                                                 value={newEmail !== null ? newEmail : email}
                                                 onChange={handleEmailChange}
+                                                disabled={loading}
                                             />
 
                                             <i class="fa-solid fa-envelope"></i>
@@ -939,6 +946,7 @@ function Admindetail() {
                                                 value={newPhone !== null ? newPhone : phoneNo2}
                                                 onChange={handlePhoneChange}
                                                 maxLength={10}
+                                                disabled={loading}
                                             />
                                             <i class="fas fa-phone"></i>
                                         </div>
@@ -956,6 +964,7 @@ function Admindetail() {
                                                 value={newAddress !== null ? newAddress : address}
                                                 onChange={handleAddressChange}
                                                 maxLength={40}
+                                                disabled={loading}
                                             />
                                             <i class="fa-solid fa-address-card"></i>
                                         </div>
@@ -965,22 +974,53 @@ function Admindetail() {
                                         )}
                                     </div>
                                     <div className="d-grid col-5">
-                                        <button className='btn btn-primary' onClick={handlesaveButton} >Save Details</button>
+                                        <button className='btn btn-primary' disabled={loading} onClick={handlesaveButton} >Save Details</button>
                                     </div>
                                 </div>
 
                             </div>
 
-                        )}
+                            {/* )} */}
 
-
-                    </>
-                )}
-            </>
-
+                        </>
+                    )}
+                </>
 
 
 
+          
+
+
+            <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' ,pointerEvents: loading ? 'none' : 'auto'}}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p> {modalMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={closeDialog}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+
+            <Modal show={isDialogOpen1} onHide={closeDialog1} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p> {modalMessage1}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={closeDialog1}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+      
+        
+            </div>
         </>
     )
 }

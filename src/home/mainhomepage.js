@@ -88,12 +88,12 @@ function Mainhomepage() {
     <div className="topnav" id="navbarSupportedContent">
       <ul className="navbar-nav ml-auto d-flex flex-row">
 
-        <NavLink className="nav-items" to="/homepagelogin">
+        <NavLink className="nav-items" to="/">
           <img src={Homelogo} className="logo" alt='homepage_logo' />
         </NavLink>
 
         <li className="nav-items">
-          <NavLink to="/homepagelogin" className="nav-link">Home</NavLink>
+          <NavLink to="/ " activeClassName="active" className="nav-link">Home</NavLink>
         </li>
         <li className="nav-items">
           <NavLink to="" className="nav-link">About</NavLink>
@@ -114,11 +114,11 @@ function Mainhomepage() {
 
 
 
-           {user && (
+           {/* {user && (
                 <div>
                     <Navbar />
                 </div>
-            )} 
+            )}  */}
 
 
 

@@ -4,6 +4,15 @@
   margin-right: 30px; /* Adjust this value as needed */
   margin-left: 30px;
 }
+
+.navbar-nav{
+ 
+   margin-left: 16%;
+
+}
+
+
+
 .lini-nav-items {
   background-color: #e3f2fd;
   border-right: 1px solid black;
@@ -16,6 +25,7 @@
   border-radius: 5px;
 }
 
+
 .nav-item {
    display: flex;
   padding: 2px;
@@ -25,6 +35,32 @@
 
 .navbar-toggler-icon {
   color:  red; /* Change this to the desired color */
+}
+
+
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+  .CustomeNavbar {
+    margin-top: 14%; /* Adjusted margin for smaller screens */
+  }
+  .togglerr{
+    margin-right: 1px;
+  }
+  .nav-link{
+       margin-left: 20px;
+  }
+  .tooglebutton  {
+
+    margin-left: 20px;
+
+  }
+  .navbar-nav{
+ 
+    margin-left: 0;
+ 
+ }
+ 
 }
 
 

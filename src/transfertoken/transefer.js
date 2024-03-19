@@ -4,6 +4,7 @@ import PhoneSendOtp from '../adminLogin/phonesendotp';
 import Send from '../adminLogin/sendmail'; // Import the Send component
 import { auth } from '../adminLogin/firebase';
 import { database } from '../firebase';
+import Navbar from '../adminLogin/navbar';
 
 function Transfer() {
 
@@ -78,7 +79,7 @@ function Transfer() {
 
       {/* <div> Transefer Admin  Password  : {transferPassword}</div>  */}
 
-
+     <Navbar/>
 
       <div className='containers'>
         <div className='formgroup'>

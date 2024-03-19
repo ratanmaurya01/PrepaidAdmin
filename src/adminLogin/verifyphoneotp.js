@@ -10,7 +10,6 @@ function Verifyphoneotp() {
   const navigate = useNavigate();
   const location = useLocation();
   const localPhoneNumber = location.state?.phoneNumber; // Access the phone number passed from the previous page
-  const [sessionValid, setSessionValid] = useState(true); // Initialize sessionValid to true
 
  // console.log ('local phone number: ' ,localPhoneNumber);
   
@@ -54,13 +53,13 @@ function Verifyphoneotp() {
 
     if (severTimestammp - lastActive <= 60000) {
       // Compare against 60000 for 1 minute (60 seconds)
-      setSessionValid(false); // Set sessionValid to false if session has expired
+     // setSessionValid(false); // Set sessionValid to false if session has expired
       alert("Cannot login. Another session is active. Please retry after sometime. ");
       navigate('/login');
     } else {
       updateSessionTime();
       navigate('/welcome');
-      setSessionValid(true); // Set sessionValid to true if session is valid
+    //  setSessionValid(true); // Set sessionValid to true if session is valid
     }
   };
 
@@ -95,6 +94,17 @@ function Verifyphoneotp() {
 // }
 
 
+const handleOnChange =(e)=>{
+  setError('');
+  const value = e.target.value.replace(/\s/g, ''); // Remove spaces
+  if (/^\d*$/.test(value)) { // Test if the value contains only digits
+      setOtp(value); // Update the OTP state if it's valid
+  }
+
+
+}
+
+
   return (
 
     <>
@@ -111,12 +121,8 @@ function Verifyphoneotp() {
               value={otp}
               className='form-control'
               // onChange={(e) => setOtp(e.target.value.replace(/\s/g, ''))}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\s/g, ''); // Remove spaces
-                if (/^\d*$/.test(value)) { // Test if the value contains only digits
-                  setOtp(value); // Update the OTP state if it's valid
-                }
-              }}
+              // onChange={(e) => handleOnChange}
+              onChange={handleOnChange}
               maxLength={6}
 
               placeholder="Mobile-OTP "

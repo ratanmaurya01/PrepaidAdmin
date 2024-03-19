@@ -73,6 +73,8 @@ import Ratan from './testapp/ratan'
 import Mainhomepage from './home/mainhomepage'
 import Homepagelogin from './home/homepagelogin'
 
+import InternetConnect from './InternetConnect'
+
 
 function App() {
   return (
@@ -144,8 +146,9 @@ function App() {
               <Route path='/transferphoneemail' element={<Transferphoneemail />} />
               <Route path="/createtime" element={<Createtime />} />
               <Route path="/pendingtoken" element={<Pendingtoken />} />
-              <Route path="/" element={<Mainhomepage />} />
-              <Route path="/homepagelogin" element={<Homepagelogin />} />
+              <Route path="/mainhomepage" element={<Mainhomepage />} />
+              <Route path="/" element={<Homepagelogin />} />
+              <Route path="/InternetConnect" element={<InternetConnect />} />
 
             </Routes>
           </section>

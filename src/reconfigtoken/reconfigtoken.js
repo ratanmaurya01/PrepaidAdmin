@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import CommonFuctions from '../commonfunction';
+import { Modal, Button } from 'react-bootstrap';
 
 
 
@@ -21,8 +22,6 @@ function Homepage() {
 
 
   const SessionTime = new CommonFuctions();
-
-
   const [user, setUser] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
@@ -82,6 +81,18 @@ function Homepage() {
 
 
   const handleSearch = async (phoneNumber) => {
+
+
+    const status = await SessionTime.checkInternetConnection(); // Call the function
+    //  setShowChecker(status);
+    if (status === 'Poor connection.') {
+      setisOpenInternet(true);
+      setModalMessage('No/Poor Internet connection. Cannot access server.');
+      setLoading(false);
+      return;
+
+    }
+
     const trimmedPhoneNumber = phoneNumber.trim();
     if (trimmedPhoneNumber !== '') {
       try {
@@ -90,7 +101,7 @@ function Homepage() {
         const newData = snapshot.val();
         setData(newData || {});
         setSelectedGroupData(newData);
-       // console.log("data", newData);
+        // console.log("data", newData);
 
         // Extract select options based on received data
         if (newData) {
@@ -160,12 +171,7 @@ function Homepage() {
     setMergedArray(uniqueSerialsArray);
   }, [serialOptions, meterList]);
 
-
-
-
-
-
-
+  
   useEffect(() => {
     extractSerialNumbers();
     handleSearch1();
@@ -188,7 +194,7 @@ function Homepage() {
           setMeterList(Object.keys(fetchedMeterList));
           Object.keys(fetchedMeterList).forEach(async (serialNumber) => {
             await isTokenAvailable(serialNumber);
-            deleteAllPendingToken(serialNumber);
+            // deleteAllPendingToken(serialNumber);
           });
           setMeterList(meterIds);
           setError('');
@@ -279,43 +285,73 @@ function Homepage() {
 
 
 
+
+
   const deleteAllPendingToken = async () => {
+
+    const status = await SessionTime.checkInternetConnection(); // Call the function
+    //  setShowChecker(status);
+    if (status === 'Poor connection.') {
+      setisOpenInternet(true);
+      setModalMessage('No/Poor Internet connection. Cannot access server.');
+      setLoading(false);
+      return;
+
+    }
+
     try {
       const deleteToken = new IsDelateTranferToken();
-      const getSerialNumber = await deleteToken.getAllTokenSerial(phoneNumber);
+      const { serialNumbers, pendingTokensDeleted } = await deleteToken.getAllTokenSerial(phoneNumber);
+
+      if (pendingTokensDeleted) {
+        console.log("Pending tokens deleted successfully.");
+      }
+      if (!pendingTokensDeleted || serialNumbers.length === 0) {
+     //   console.log("No pending token.");
+
+        setisOpenInternet(true);
+        setModalMessage('No Transfer  token available.');
+        setLoading(false);
+      }
+
 
       //  console.log('Get All Serial number:', getSerialNumber);
     } catch (error) {
       console.error('Error deleting all pending tokens:', error);
     }
   }
+
+
+
+
+
   const confirmDelete = async () => {
+    setModalMessage('Are you sure Want to delete ');
+    setisConfirmed(true);
 
-    const storeSessionId = localStorage.getItem('sessionId');
-    const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
-    if (storeSessionId === sessionId) {
+    // const storeSessionId = localStorage.getItem('sessionId');
+    // const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
+    // if (storeSessionId === sessionId) {
 
-      SessionTime.updateSessionTimeActiveUser(phoneNumber);
+    //   SessionTime.updateSessionTimeActiveUser(phoneNumber);
 
-      const confirmation = window.confirm('Are you sure you want to delete all pending tokens?');
-      if (confirmation) {
-        deleteAllPendingToken();
-      } else {
-        // Optionally handle the case where the user cancels the action
-      }
+    //   const confirmation = window.confirm('Are you sure you want to delete all pending tokens?');
+    //   if (confirmation) {
+    //         deleteAllPendingToken();  
+    //   } else {
+    //     // Optionally handle the case where the user cancels the action
+    //   }
+    // } else {
 
-
-
-    } else {
-
-      alert("You have been logged-out due to log-in from another device.");
-      // console.log('you are logg out ');
-      handleLogout();
-    }
-
-
+    //   alert("You have been logged-out due to log-in from another device.");
+    //   // console.log('you are logg out ');
+    // //  handleLogout();
+    // }
 
   }
+
+
+
 
 
   const toggleListVisibility = () => {
@@ -370,98 +406,143 @@ function Homepage() {
     SessionTime.updateSessionTimeActiveUser(numberPart);
   }
 
+
+  const [modalMessage, setModalMessage] = useState('');
+  const [isOpenInternet, setisOpenInternet] = useState(false);
+
+  const closeInternet = () => {
+    setisOpenInternet(false);
+    // window.location.reload(); // This will reload the page
+  };
+
+  const loadingStyle = {
+    pointerEvents: loading ? 'none' : 'auto', // Disable pointer events if loading, otherwise enable
+  };
+
+
+
+  const [isConfirmed, setisConfirmed] = useState(false);
+  const isConfirmedYes = () => {
+
+    setisConfirmed(false);
+    deleteAllPendingToken();
+    setLoading(true);
+
+  }
+
+  const closeisConfirmed = () => {
+    setisConfirmed(false);
+  };
+
+
+
+
+
+
+
   return (
     <>
-      <Navbar />
-      <div style={{ display: 'flex' }}>
-        <div>
-          <div className='sidebar  ' style={{ marginTop: '5%', height: '100%', width: '20%' }}>
 
 
-            <div style={{ marginTop: '10%', fontWeight: 'bold' }}>
-              {/* <p >Current Mobile number <br /> {'+91' + phoneNumber} </p> */}
-              <label htmlFor="phoneNumber">Phone Number</label>
-              <div className='input-container1'>
-                <input
-                  id='phoneNumber'
-                  type="text"
-                  // value={phoneNumber}
-                  value={phoneNumber ? `+91${phoneNumber}` : '+91'}
-                  className='form-control'
-                  placeholder=" Phone Number"
-                  readOnly
-                  disabled
+      <div style={loadingStyle}>
 
-                />
+        <Navbar />
 
-                <i className="fas fa-phone"></i>
+        {loading ? (
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
+            <div className="spinner-border text-danger" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        ) : null}
+        <div style={{ display: 'flex' }}>
+          <div>
+            <div className='sidebar  ' style={{ marginTop: '5%', height: '100%', width: '20%' }}>
+
+
+              <div style={{ marginTop: '10%', fontWeight: 'bold' }}>
+                {/* <p >Current Mobile number <br /> {'+91' + phoneNumber} </p> */}
+                <label htmlFor="phoneNumber">Phone Number</label>
+                <div className='input-container1'>
+                  <input
+                    id='phoneNumber'
+                    type="text"
+                    // value={phoneNumber}
+                    value={phoneNumber ? `+91${phoneNumber}` : '+91'}
+                    className='form-control'
+                    placeholder=" Phone Number"
+                    readOnly
+                    disabled
+                  />
+
+                  <i className="fas fa-phone"></i>
+                </div>
+
               </div>
 
-            </div>
-
-            <hr style={{ color: 'red', }}></hr>
-            {/* <div style={{ fontWeight: 'bold' }}>
+              <hr style={{ color: 'red', }}></hr>
+              {/* <div style={{ fontWeight: 'bold' }}>
               <p>Current Password  <br /> {password} </p>
             </div> */}
 
-            <div style={{ fontWeight: 'bold' }}>
-              <label htmlFor="password">Current Password</label>
-              <div className='input-container1'>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className='form-control'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  id="password"
-                  name="password"
-                  readOnly
-                  disabled
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="password-toggle-button"
-                >
-                  <FontAwesomeIcon
-                    icon={showPassword ? faEyeSlash : faEye}
-                    className="password-toggle-icon"
+              <div style={{ fontWeight: 'bold' }}>
+                <label htmlFor="password">Current Password</label>
+                <div className='input-container1'>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className='form-control'
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    id="password"
+                    name="password"
+                    readOnly
+                    disabled
                   />
-                </button>
-                <i class="fas fa-lock password-icon"></i>
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="password-toggle-button"
+                  >
+                    <FontAwesomeIcon
+                      icon={showPassword ? faEyeSlash : faEye}
+                      className="password-toggle-icon"
+                    />
+                  </button>
+                  <i class="fas fa-lock password-icon"></i>
+                </div>
               </div>
-            </div>
 
-            <hr style={{ color: 'red' }}></hr>
+              <hr style={{ color: 'red' }}></hr>
 
-            {/* <div >
+              {/* <div >
               <p style={{ cursor: 'pointer', fontWeight: 'bold' }} onClick={confirmDelete}>Delete all Pending Transfer Token</p>
             </div> */}
 
-            <div className="delete-button">
-              <p style={{ cursor: 'pointer', fontWeight: 'bold' }} onClick={confirmDelete}>Delete all Pending Transfer Token</p>
+              <div className="delete-button">
+                <p style={{ cursor: 'pointer', fontWeight: 'bold' }} onClick={confirmDelete}>Delete all Pending Transfer Token</p>
+              </div>
+
+
+              <hr style={{ color: 'red' }}></hr>
+
+
+            </div>
+          </div>
+          <div className='container' style={{ marginLeft: '25%' }} >
+            <div  >
+              <h4 style={{ marginTop: '%', width: '35%' }} > </h4>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '9%', marginLeft: '1%', backgroundColor: 'blue', width: '60%', }}>
+
+              <label style={{ fontWeight: 'bold', marginLeft: '5px', color: 'white' }} htmlFor="reconfigureTokenCheckbox">
+                Re-Configuration Token will be generated for all the meters present in the list
+
+              </label>
             </div>
 
 
-            <hr style={{ color: 'red' }}></hr>
-
-
-          </div>
-        </div>
-        <div className='container' style={{ marginLeft: '25%' }} >
-          <div  >
-            <h4 style={{ marginTop: '%', width: '35%' }} > </h4>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', marginTop: '9%', marginLeft: '1%', backgroundColor: 'blue', width: '60%', }}>
-
-            <label style={{ fontWeight: 'bold', marginLeft: '5px', color: 'white' }} htmlFor="reconfigureTokenCheckbox">
-              Re-Configuration Token will be generated for all the meters present in the list
-
-            </label>
-          </div>
-
-
-          {/* <select className="form-select w-50">
+            {/* <select className="form-select w-50">
             <option>View Meter List</option>
             {Object.entries(data).map(([groupName, serialData]) => (
               Object.entries(serialData).map(([serialNumber, serialInfo]) => (
@@ -472,7 +553,7 @@ function Homepage() {
             ))}
           </select> */}
 
-          {/* 
+            {/* 
           <select className="form-select w-50">
             <option>View All Meter List</option>
             {Object.entries(data).map(([groupName, groupData]) => (
@@ -490,21 +571,22 @@ function Homepage() {
             ))}
           </select> */}
 
-          <div style={{ marginLeft: '1%', marginTop: '3%' }}>
-            <select
-              className="form-select w-50" // Added Bootstrap class to set width to 100%
-            >
-              <option>View All Meter List</option>
-              {mergedArray.map(({ serial, name }, index) => (
-                <option key={index} value={name ? `${serial}  ${name}` : serial}>
+            <div style={{ marginLeft: '1%', marginTop: '3%' }}>
+              <select
+                className="form-select w-50" // Added Bootstrap class to set width to 100%
+                disabled={loading}
+              >
+                <option>View All Meter List</option>
+                {mergedArray.map(({ serial, name }, index) => (
+                  <option key={index} value={name ? `${serial}  ${name}` : serial}>
 
-                  {serial}{tokenStatus[serial]} {name}
-                </option>
-              ))}
-            </select>
+                    {serial}{tokenStatus[serial]} {name}
+                  </option>
+                ))}
+              </select>
 
-          </div>
-          {/* 
+            </div>
+            {/* 
           <div style={{ marginLeft: '5%' }}>
 
             <Dropdown className="mt-2">
@@ -526,12 +608,54 @@ function Homepage() {
 
 
 
-          <div>
-            <Phonepasswordchange />
+            <div>
+              <Phonepasswordchange />
+            </div>
           </div>
         </div>
       </div>
+
+      <Modal show={isOpenInternet} onHide={closeInternet} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeInternet}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={isConfirmed} onHide={closeisConfirmed} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p style={{ color: 'red' }} > {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+
+          <div className="d-flex justify-content-center w-100">
+
+            <Button variant="primary" style={{ marginRight: '20px' }} onClick={isConfirmedYes}>
+              YES
+            </Button>
+
+            <Button variant="success" onClick={closeisConfirmed}>
+              No
+            </Button>
+
+
+
+
+          </div>
+        </Modal.Footer>
+      </Modal>
+
+
     </>
+
   );
 }
 
