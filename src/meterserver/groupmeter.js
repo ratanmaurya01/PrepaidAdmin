@@ -3,7 +3,7 @@ import { database } from '../firebase';
 import Navbar from '../adminLogin/navbar';
 import Login from '../adminLogin/login';
 import { auth } from '../adminLogin/firebase';
-import { Modal } from 'react-bootstrap';
+import { Modal , Button} from 'react-bootstrap';
 import Servermeter from './servermeter';
 import Ungroup from './ungroup';
 import '../consucss.css';
@@ -40,6 +40,36 @@ const Groupmeter = () => {
     const [activeComponent, setActiveComponent] = useState('servermeter');
     const [monthData, setMonthData] = useState('');
     const [reconfig, setReconfig] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [modalMessage, setModalMessage] = useState('');
+
+
+    
+    const [onlineStatus, setOnlineStatus] = useState(null);
+
+
+
+ useEffect(() => {
+        const checkInter = async () => {
+            const result = await SessionTime.isCheckInterNet();
+            setOnlineStatus(result);
+            //  If no internet and already loading, automatically switch to show no internet after 5 seconds
+            if (!result && loading) {
+                setTimeout(() => {
+                    setLoading(false);
+                }, 5000); // 5 seconds
+            }
+        };
+        // Call checkInter function initially
+        checkInter();
+        // Set up an interval to check internet status periodically
+        const interval = setInterval(checkInter, 5000); // Check every 5 seconds
+        // Clean up interval on component unmount
+        return () => clearInterval(interval);
+    }, [loading]); // Include loading in dependencies array to listen for its changes
+
+
+
 
 
     useEffect(() => {
@@ -74,6 +104,8 @@ const Groupmeter = () => {
                     handleSearch(numberPart);
                     SessionValidate(numberPart);
                     SessionUpdate(numberPart);
+                    setLoading(false);
+                
 
                 }
             } else {
@@ -87,7 +119,20 @@ const Groupmeter = () => {
 
 
 
-    const handleSearch = (numberPart) => {
+    const handleSearch = async (numberPart) => {
+
+        const status = await SessionTime.checkInternetConnection(); // Call the function
+        //  setShowChecker(status);
+        if (status === 'Poor connection.') {
+            setIsDialogOpen(true);
+            setModalMessage('No/Poor Internet connection. Cannot access server.');
+            setLoading(false);
+            /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+            return;
+            //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
+            //  return;
+        }
+
         try {
             if (numberPart === undefined || numberPart === null) {
                 return;
@@ -100,6 +145,7 @@ const Groupmeter = () => {
                 if (newData !== null) {
                     setData(newData || {});
                     setShowAllData(true);
+                    setLoading(false);
                 } else {
                     //  console.log('Data not found for the provided number part.');
                     setData({});
@@ -113,6 +159,7 @@ const Groupmeter = () => {
         };
 
     }
+
 
     // Function to remove underscores from keys in an object
     const removeUnderscores = (data) => {
@@ -331,12 +378,10 @@ const Groupmeter = () => {
         const storeSessionId = localStorage.getItem('sessionId');
         const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
         if (storeSessionId === sessionId) {
-
             SessionTime.updateSessionTimeActiveUser(phoneNumber);
             let newgroupName = group.replace(/ /g, "_");
 
             try {
-
                 const serialDataRef = database.ref(`/adminRootReference/tenantDetails/${phoneNumber}/${newgroupName}/${serial}`);
                 const snapshot = await serialDataRef.once('value');
                 const serialData = snapshot.val();
@@ -367,6 +412,8 @@ const Groupmeter = () => {
             // console.log('you are logg ou.t ');
             handleLogout();
         }
+
+
 
     };
 
@@ -475,6 +522,8 @@ const Groupmeter = () => {
             handleLogout();
         }
 
+
+
     };
 
 
@@ -512,9 +561,49 @@ const Groupmeter = () => {
     }
 
 
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const closeDialog = () => {
+      setIsDialogOpen(false);
+    //   window.location.reload(); // This will reload the page
+  
+    };
+  
+
+
     return (
         <>
             <Navbar />
+
+    
+{onlineStatus !== null && onlineStatus === false ? (
+                    <div style={{ textAlign: 'center', marginTop: '20%' }}>
+                        {/* No Internet Connection */}
+                        <h3>No Internet Connection</h3>
+                    </div>
+                ) : (
+   <>
+
+
+            {loading ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>
+            ) : null}
+
 
 
             <div>
@@ -537,16 +626,16 @@ const Groupmeter = () => {
                                
                             </div> */}
                             {/* {showAllData && ( */}
-                            <div className='sidebar ' style={{  position: 'fixed', width: '20%' }}>
+                            <div className='sidebar ' style={{ position: 'fixed', width: '20%' }}>
                                 <div >
-                                    <h6 style={{cursor:'pointer'}} onClick={() => handleButtonClick('servermeter')}>Home </h6>
+                                    <h6 style={{ cursor: 'pointer' }} onClick={() => handleButtonClick('servermeter')}>Home </h6>
                                     <hr></hr>
 
-                                    <h6 style={{cursor:'pointer'}} onClick={() => handleButtonClick('ungroup')}>Ungroup Meter</h6>
+                                    <h6 style={{ cursor: 'pointer' }} onClick={() => handleButtonClick('ungroup')}>Ungroup Meter</h6>
 
                                 </div>
                                 <hr></hr>
-                                <h6 style={{ color: '#8B0000',}} >Group Meter</h6>
+                                <h6 style={{ color: '#8B0000', }} >Group Meter</h6>
                                 <hr></hr>
                                 <div style={{}} >
 
@@ -884,6 +973,23 @@ const Groupmeter = () => {
                     </div>
                 </div>
             </div >
+
+     </>
+                )}
+
+
+            <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p> {modalMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={closeDialog}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </>
     );
 };

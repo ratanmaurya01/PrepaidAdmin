@@ -10,7 +10,6 @@ import { auth } from '../adminLogin/firebase'
 function Mainhomepage() {
 
     const [user, setUser] = useState(null);
-
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((authUser) => {
             if (authUser) {
@@ -93,7 +92,7 @@ function Mainhomepage() {
         </NavLink>
 
         <li className="nav-items">
-          <NavLink to="/ " activeClassName="active" className="nav-link">Home</NavLink>
+          <NavLink to="/" activeClassName="active" className="nav-link">Home</NavLink>
         </li>
         <li className="nav-items">
           <NavLink to="" className="nav-link">About</NavLink>
@@ -110,20 +109,12 @@ function Mainhomepage() {
 </div>
 
 
-
-
-
-
-           {/* {user && (
+         {user && (
                 <div>
                     <Navbar />
                 </div>
-            )}  */}
-
-
-
-
-
+            )}  
+            
         </>
     )
 }

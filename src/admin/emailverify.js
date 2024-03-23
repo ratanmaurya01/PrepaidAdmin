@@ -91,32 +91,45 @@ function Emailverify() {
 
           const db = getDatabase();
           const adminProfilePath = `adminRootReference/adminDetails/${phoneNumber}/adminProfile`;
+
+          const snapshot = await get(ref(db, adminProfilePath));
+          const existingData = snapshot.val();
+          const existingKey = existingData.key;
+          const existingPassword = existingData.password;
+          const newData = {
+            // Update email in the newData object
+            address: newAddress || '', // Retain the existing address
+            email: initialEmail || existingData.initialEmail || '', // Replace '' with a default value if needed
+            key: existingKey, // Retain the existing key
+            name: newName || '', // Replace '' with a default value if needed
+            password: existingPassword, // Retain the existing password
+            phoneNo: phoneNumber || '', // Replace '' with a default value if needed
+            phoneNo2: newPhone || '', // Replace '' with a default value if needed
+            // Add other fields as needed
+          };
+
+
+          await set(ref(db, adminProfilePath), newData);
+          setModalMessage('Data Saved Successfully.');
+          setisDialogOpenDataSave(true)
+          setLoading(false);
+
+          // navigate('/admindetail');
           try {
-            const snapshot = await get(ref(db, adminProfilePath));
-            const existingData = snapshot.val();
-            const existingKey = existingData.key;
-            const existingPassword = existingData.password;
-            const newData = {
-              // Update email in the newData object
-              address: newAddress || '', // Retain the existing address
-              email: initialEmail || existingData.initialEmail || '', // Replace '' with a default value if needed
-              key: existingKey, // Retain the existing key
-              name: newName || '', // Replace '' with a default value if needed
-              password: existingPassword, // Retain the existing password
-              phoneNo: phoneNumber || '', // Replace '' with a default value if needed
-              phoneNo2: newPhone || '', // Replace '' with a default value if needed
-              // Add other fields as needed
-            };
-            await set(ref(db, adminProfilePath), newData);
-            navigate('/admindetail');
+            sessiontime.updateSessionTimeActiveUser(phoneNumber);
 
 
-            alert('Data saved successfully!');
-            
           } catch (error) {
-            console.error('Error updating data:', error);
-            alert('Failed to update data. Please try again.');
+            setLoading(false);
+            setIsDialogOpen(true);
+            // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+            const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry.`;
+            setModalMessage(errorMessage);
+
           }
+
+          //   alert('Data saved successfully!');
+
 
 
 
@@ -124,7 +137,7 @@ function Emailverify() {
           // setIsSessionActive(false);
           alert("Cannot login. Another session is active. Please retry after sometime. ");
           // console.log('you are logg out ');
-          handleLogout();
+          //  handleLogout();
         }
 
       } catch (error) {
@@ -187,25 +200,36 @@ function Emailverify() {
       return;
     }
 
-    const storeSessionId = localStorage.getItem('sessionId');
-    try {
-      const { sessionId } = await sessiontime.HandleValidatSessiontime(phoneNumber);
-      if (storeSessionId === sessionId) {
+    // const storeSessionId = localStorage.getItem('sessionId');
+    // try {
+    //   const { sessionId } = await sessiontime.HandleValidatSessiontime(phoneNumber);
+    //   if (storeSessionId === sessionId) {
 
-        e.preventDefault(); // Prevent default form submission
-        handleOnSubmit(); // Call the submit function
-
-      } else {
-        // setIsSessionActive(false);
-        alert("Cannot login. Another session is active. Please retry after sometime. ");
-        // console.log('you are logg out ');
-        handleLogout();
-      }
-
-    } catch (error) {
-
-
+    setLoading(true);
+    const status = await sessiontime.checkInternetConnection(); // Call the function
+    //  setShowChecker(status);
+    if (status === 'Poor connection.') {
+      setIsDialogOpen(true);
+      setModalMessage('No/Poor Internet connection , Please retry.');
+      setLoading(false);
+      // alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+      return;
     }
+
+    e.preventDefault(); // Prevent default form submission
+    handleOnSubmit(); // Call the submit function
+
+    //   } else {
+    //     // setIsSessionActive(false);
+    //     alert("Cannot login. Another session is active. Please retry after sometime. ");
+    //     // console.log('you are logg out ');
+    //     handleLogout();
+    //   }
+
+    // } catch (error) {
+
+
+    // }
 
 
 
@@ -228,8 +252,24 @@ function Emailverify() {
 
   const closeDialog = () => {
     setIsDialogOpen(false);
+    navigate('/admindetail');
     // window.location.reload(); // This will reload the page
   };
+
+  const [isDialogOpenDataSave, setisDialogOpenDataSave] = useState(false);
+
+  const closeDialogDataSave = () => {
+    setisDialogOpenDataSave(false);
+    navigate('/admindetail');
+    window.location.reload(); // This will reload the page
+  };
+
+
+  const handleBackButton = () => {
+    navigate('/admindetail');
+}
+
+
 
 
   return (
@@ -239,54 +279,78 @@ function Emailverify() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', marginTop: '20%' }}>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: '9999'
+        }}>
           <div className="spinner-border text-danger" role="status">
-            <span className="sr-only"></span>
+            <span className="sr-only">Loading...</span>
           </div>
         </div>
-      ) : (
+      ) : null}
 
-        <div className='containers'>
-          <div className='formgroup'>
-            <div>
-              {/* <p>Local Email is : {initialEmail}</p> */}
+
+      <div className='containers'>
+        <div className='formgroup'>
+          {/* <div>
+            
               <h3>Enter OTP</h3>
-            </div>
-            <div>
-              <label htmlFor="mobileOTP">Enter Mobile OTP</label>
-              <input
-                type="text"
-                className='form-control'
-                placeholder="Mobile OTP"
-                value={mobileOTP}
-                onChange={handleMobileOTPChange}
-                maxLength={6}
-              />
-              {mobileOTPError && <p style={{ color: 'red' }} className="error">{mobileOTPError}</p>}
-            </div>
-            <div>
-              <label htmlFor="emailOTP">Enter E-mail OTP</label>
-              <input
-                type="text"
-                className='form-control'
-                placeholder="E-mail OTP"
-                value={emailOTP}
-                onChange={handleEmailOTPChange}
-                maxLength={6}
-              />
-              {emailOTPError && <p style={{ color: 'red' }} className="error">{emailOTPError}</p>}
-            </div>
-            <div className='d-grid col-4'>
-              <button type="submit" className='btn btn-primary' onClick={handleSubmitClick}>
-                VERIFY
-              </button>
-            </div>
+            </div> */}
+          <div>
+            <label htmlFor="mobileOTP">Enter Mobile OTP</label>
+            <input
+              type="text"
+              className='form-control'
+              placeholder="Mobile OTP"
+              value={mobileOTP}
+              onChange={handleMobileOTPChange}
+              maxLength={6}
+            />
+            {mobileOTPError && <p style={{ color: 'red' }} className="error">{mobileOTPError}</p>}
+          </div>
+          <div>
+            <label htmlFor="emailOTP">Enter E-mail OTP</label>
+            <input
+              type="text"
+              className='form-control'
+              placeholder="E-mail OTP"
+              value={emailOTP}
+              onChange={handleEmailOTPChange}
+              maxLength={6}
+            />
+            {emailOTPError && <p style={{ color: 'red' }} className="error">{emailOTPError}</p>}
+          </div>
+          {/* <div className='d-grid col-4'>
+            <button type="submit" className='btn btn-primary' onClick={handleSubmitClick}>
+              VERIFY
+            </button>
+          </div> */}
+
+
+          <div className="d-flex justify-content-center w-100">
+            <button className="btn btn-danger" onClick={handleBackButton} style={{ marginRight: '50px' }}>Back</button>
+            
+            <button type="submit" className='btn btn-primary' onClick={handleSubmitClick}>
+              VERIFY
+            </button>
 
           </div>
+
+
+
         </div>
+      </div>
 
 
-      )}
+
 
 
       <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
@@ -297,6 +361,21 @@ function Emailverify() {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={closeDialog}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+
+      <Modal show={isDialogOpenDataSave} onHide={closeDialogDataSave} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialogDataSave}>
             Close
           </Button>
         </Modal.Footer>

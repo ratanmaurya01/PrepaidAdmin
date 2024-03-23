@@ -11,9 +11,7 @@ import { unlink } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import CommonFuctions from './commonfunction';
 import { Modal, Button } from 'react-bootstrap';
-
-
-
+import { ref, set, get, child, getDatabase, onValue } from 'firebase/database';
 
 import './style.css';
 
@@ -33,6 +31,7 @@ function Adin() {
   let counter = 0;
   let ltime = 0;
 
+  const navigate = useNavigate();
 
   const [phoneInput, setPhoneInput] = useState('');
   const [meterIdInput, setMeterIdInput] = useState('');
@@ -50,8 +49,6 @@ function Adin() {
   const [onlineStatus, setOnlineStatus] = useState(null);
 
 
-
-
   let number = '';
 
   // if (!user) {
@@ -63,7 +60,6 @@ function Adin() {
   const rechargeRequestTokenRef = database.ref('/adminRootReference/meterDetails/rechargeRequestToken');
 
 
-
   function getLocalTime() {
     counter++;
     ltime = new Date().getTime();
@@ -73,20 +69,18 @@ function Adin() {
   getLocalTime();
 
   const pendingTokens = async () => {
-    setLoading(true);
-    const status = await Sessionid.checkInternetConnection(); // Call the function
+    //   setLoading(true);
+    // const status = await Sessionid.checkInternetConnection(); // Call the function
 
-    if (status === 'Poor connection.') {
-      setIsDialogOpen(true);
-      setModalMessage('No/Poor Internet connection. Cannot access server.');
+    // if (status === 'Poor connection.') {
+    //   setIsDialogOpen(true);
+    //   setModalMessage('No/Poor Internet connection. Cannot access server.');
 
-      setLoading(false);
+    //   setLoading(false);
 
-      return;
+    //   return;
 
-    }
-
-
+    // }
 
     getGroupdetail();
     // console.log("My loog Number is ");
@@ -99,7 +93,6 @@ function Adin() {
     // }
     try {
       const meters = await getAdminMeterList();
-
       const promises = meters.map(async (meter) => {
         return baseUrlMeterDetails
           .child(meter)
@@ -117,14 +110,9 @@ function Adin() {
           });
       });
 
-
       const tokenResults = await Promise.all(promises);
       const filteredTokens = tokenResults.filter((token) => token !== null);
       setTokens(filteredTokens);
-
-      setLoading(false);
-
-
 
       // console.log('Filtered Tokens:', filteredTokens);
     } catch (error) {
@@ -147,11 +135,11 @@ function Adin() {
           const numberPart = emailParts[0];
           //  console.log("Number part:", numberPart);
           setPhoneInput(numberPart);
-
           setNumberPart(numberPart);
           getAdminPassword(numberPart);
           number = numberPart;
           pendingTokens();
+          setLoading(false);
 
         }
       } else {
@@ -354,129 +342,146 @@ function Adin() {
   ///// Get New Urls
   // token generate
 
-  const getnerateRechargeToken = (serverTime, type, phone, sr, pass, am, balance, tf, tknid) => {
-    // console.log('hhhhhh', serverTime, type, phone, sr, pass, am, balance, tf, tknid);
-    // console.log("Available balance: " + balance);
-    const formattedAm = parseFloat(am).toFixed(2);
-    //  console.log('Recharge of the amount :', formattedAm);
-    const toknid = ('0' + (parseInt(tknid, 10) + 1)).slice(-2);
-    //  console.log('my token Data is ' + toknid);
-    const dateObj = new Date(serverTime);
-    const year = dateObj.getFullYear().toString();
-    const month = (dateObj.getMonth() + 1).toString(); // Adding 1 since months are zero-indexed
-    const day = dateObj.getDate().toString();
-    const hour = dateObj.getHours().toString().padStart(2, '0');;
-    const minute = dateObj.getMinutes().toString();
-    const typeHex = '01';
-    const srHex = parseInt(sr).toString(16).padStart(6, '0');
-    const dayHex = (parseInt(day, 10)).toString(16).padStart(2, '0');
-    // const dayHex = ('0' + (parseInt(day, 10)).toString(16)).slice(-2);
-    //console.log('dayHex', dayHex);
-    const hourHex = (parseInt(hour, 10)).toString(16).padStart(2, '0');
-    const minuteHex = (parseInt(minute, 10)).toString(16).padStart(2, '0');
-    const monthHex = (parseInt(month, 10)).toString(16).padStart(2, '0');
-    const yearHex = (parseInt(year.toString().substring(2), 10)).toString(16).padStart(2, '0');
-    const tknhex = parseInt(toknid.toString(), 10).toString(16).padStart(2, '0');
-    // console.log("token data hex ", tknhex);
-    const amhex = parseInt(formattedAm.toString(), 10).toString(16).padStart(4, '0');
-    // console.log("Amout data hex ", amhex);
-    // Convert 'am' to a fixed decimal number with two decimal places,
-    // then convert it to hexadecimal and ensure it retains two decimal places
+  const getnerateRechargeToken = async (serverTime, type, phone, sr, pass, am, balance, tf, tknid) => {
 
-
-    const tfhex = parseInt(tf.replace(".", ""), 10).toString(16).padStart(4, '0');
+    const storeSessionId = localStorage.getItem('sessionId');
+    try {
+      const { sessionId } = await Sessionid.HandleValidatSessiontime(numberPart);
+      if (storeSessionId === sessionId) {
 
 
 
-    const phhex = parseInt(numberPart.toString(), 10).toString(16).padStart(10, '0');
-    // console.log("typehex", typeHex, srHex, dayHex, monthHex, yearHex, hourHex, minuteHex, tknhex, amhex, tfhex, phhex);
-    const hextokenData = `${typeHex}${srHex}${dayHex}${monthHex}${yearHex}${hourHex}${minuteHex}${tknhex}${amhex}${tfhex}${phhex}`;
-    ///// console.log('hexalldata ', hextokenData);
-    // console.log('trarrie token ', tfhex);
-    const part1 = hextokenData.substring(0, 32);
-    const part2 = hextokenData.substring(32);
-    //  console.log("part1", part1);
-    /////  console.log("part2", part2);
 
-    const key = getKey(phhex, srHex, password);
-    //  console.log('key', key);
-    const result = encryptData(part1, key);
+        // console.log('hhhhhh', serverTime, type, phone, sr, pass, am, balance, tf, tknid);
+        // console.log("Available balance: " + balance);
+        const formattedAm = parseFloat(am).toFixed(2);
+        //  console.log('Recharge of the amount :', formattedAm);
+        const toknid = ('0' + (parseInt(tknid, 10) + 1)).slice(-2);
+        //  console.log('my token Data is ' + toknid);
+        const dateObj = new Date(serverTime);
+        const year = dateObj.getFullYear().toString();
+        const month = (dateObj.getMonth() + 1).toString(); // Adding 1 since months are zero-indexed
+        const day = dateObj.getDate().toString();
+        const hour = dateObj.getHours().toString().padStart(2, '0');;
+        const minute = dateObj.getMinutes().toString();
+        const typeHex = '01';
+        const srHex = parseInt(sr).toString(16).padStart(6, '0');
+        const dayHex = (parseInt(day, 10)).toString(16).padStart(2, '0');
+        // const dayHex = ('0' + (parseInt(day, 10)).toString(16)).slice(-2);
+        //console.log('dayHex', dayHex);
+        const hourHex = (parseInt(hour, 10)).toString(16).padStart(2, '0');
+        const minuteHex = (parseInt(minute, 10)).toString(16).padStart(2, '0');
+        const monthHex = (parseInt(month, 10)).toString(16).padStart(2, '0');
+        const yearHex = (parseInt(year.toString().substring(2), 10)).toString(16).padStart(2, '0');
+        const tknhex = parseInt(toknid.toString(), 10).toString(16).padStart(2, '0');
+        // console.log("token data hex ", tknhex);
+        const amhex = parseInt(formattedAm.toString(), 10).toString(16).padStart(4, '0');
+        // console.log("Amout data hex ", amhex);
+        // Convert 'am' to a fixed decimal number with two decimal places,
+        // then convert it to hexadecimal and ensure it retains two decimal places
+        const tfhex = parseInt(tf.replace(".", ""), 10).toString(16).padStart(4, '0');
+        const phhex = parseInt(numberPart.toString(), 10).toString(16).padStart(10, '0');
+        // console.log("typehex", typeHex, srHex, dayHex, monthHex, yearHex, hourHex, minuteHex, tknhex, amhex, tfhex, phhex);
+        const hextokenData = `${typeHex}${srHex}${dayHex}${monthHex}${yearHex}${hourHex}${minuteHex}${tknhex}${amhex}${tfhex}${phhex}`;
+        ///// console.log('hexalldata ', hextokenData);
+        // console.log('trarrie token ', tfhex);
+        const part1 = hextokenData.substring(0, 32);
+        const part2 = hextokenData.substring(32);
+        //  console.log("part1", part1);
+        /////  console.log("part2", part2);
+        const key = getKey(phhex, srHex, password);
+        //  console.log('key', key);
+        const result = encryptData(part1, key);
 
-    // console.log("Main result", result);
+        // console.log("Main result", result);
 
-    const data = result + part2;
-    // console.log('May data >', data);
-    var formatData = '5657' + '18' + '52434D5452' + data;
-    const CRC = checksum(formatData);
-    // formatData = token for recharge (reachege toke to )
-    formatData = formatData + CRC + '56'; //token is
-    // console.log("generateFormattedData: CRC " + formatData);
-    const amount8 = parseInt(am.toString(), 10).toString(16).padStart(8, '0');
-    // const tfhex4 = parseInt((tf / 100.0).toString(), 10).toString(16).padStart(4, '0');
+        const data = result + part2;
+        // console.log('May data >', data);
+        var formatData = '5657' + '18' + '52434D5452' + data;
+        const CRC = checksum(formatData);
+        // formatData = token for recharge (reachege toke to )
+        formatData = formatData + CRC + '56'; //token is
+        // console.log("generateFormattedData: CRC " + formatData);
+        const amount8 = parseInt(am.toString(), 10).toString(16).padStart(8, '0');
+        // const tfhex4 = parseInt((tf / 100.0).toString(), 10).toString(16).padStart(4, '0');
 
-    if (!tf.includes(".")) {
-      tf = tf + ".00";
+        if (!tf.includes(".")) {
+          tf = tf + ".00";
+        }
+        const tfhex4 = parseInt(tf.replace(".", ""), 10).toString(16).padStart(4, '0');
+
+        const timehex = parseInt(ltime.toString(), 10).toString(16).padStart(12, '0');
+
+        const totalData = `${amount8}${tfhex4}${timehex}FFFFFFFF`;
+
+        const dateObj1 = new Date(serverTime);
+        const year1 = dateObj1.getFullYear().toString().slice(-2);
+        const month1 = (dateObj1.getMonth() + 1).toString().padStart(2, '0'); // Adding 1 since months are zero-indexed
+        const day1 = dateObj1.getDate().toString().padStart(2, '0');
+        const formattedDate = `${day1}${month1}${year1}`;
+        // console.log('naw date of time ',formattedDate);
+        const minutes = minute.toString().substring(0, 1);
+        //console.log("fornatedd Time ", formattedDate)
+        const formattedTime = `${hour}${minutes}`;
+
+        //console.log('checktime11111111111',formattedTime);
+        const ulrData = encryptData(totalData, '6D783230313139390000000000000000');
+        //  console.log('UrlsData: ', ulrData);
+        const finalUrls = `https://dk9936.github.io/re-tok-${toknid}-${sr}-${formattedDate}-${formattedTime}/${formatData}${ulrData}`;
+        // Construct the formatted date string in dd-mm-yy hh:mm:ss format
+        // console.log(formattedDate1);
+        const date = new Date(serverTime);
+        // Extract year, month, day, hours, minutes, and seconds
+        const year3 = date.getFullYear().toString().slice(-2); // Extract last 2 digits of the year
+        const month3 = ('0' + (date.getMonth() + 1)).slice(-2); // Adding leading zero if month is a single digit
+        const day3 = ('0' + date.getDate()).slice(-2); // Adding leading zero if day is a single digit
+        const hours3 = ('0' + date.getHours()).slice(-2); // Adding leading zero if hours is a single digit
+        const minutes3 = ('0' + date.getMinutes()).slice(-2); // Adding leading zero if minutes is a single digit
+        const seconds3 = ('0' + date.getSeconds()).slice(-2); // Adding leading zero if seconds is a single digit
+
+        // Construct the formatted date string in dd-mm-yy hh:mm:ss format
+        const formattedDate3 = `${day3}-${month3}-${year3}, ${hours3}:${minutes3}:${seconds3}`;
+        // eslint-disable-next-line
+        let mybalance = Number(balance).toFixed(2);
+        //  console.log('myAvailable', mybalance);
+        // eslint-disable-next-line
+        uploadDate(sr,
+          tknid,
+          formatData,
+          finalUrls,
+          formattedDate3,
+          formatData,
+          mybalance,
+          formattedAm,
+          tf,);
+
+        // console.log("finalUrls", finalUrls);
+        //sendPhoneMessage(finalUrls);
+        handleSendEmailMessage(finalUrls);
+        getPhoneNumberFromGroupName(finalUrls);
+
+        return finalUrls;
+
+
+      } else {
+
+        alert("You have been logged-out due to log-in from another device.");
+        // console.log('you are logg out ');
+        //  handleLogout();
+      }
+
+    } catch (error) {
+
+      setLoading(false);
+      setIsDialogOpen(true)
+      const errorMessage = `2Response not recieved  from server-S. Please check if transaction completed successfully, else retry.. (${error}). `;
+      setModalMessage(errorMessage);
+
     }
-    const tfhex4 = parseInt(tf.replace(".", ""), 10).toString(16).padStart(4, '0');
 
-    const timehex = parseInt(ltime.toString(), 10).toString(16).padStart(12, '0');
-
-    const totalData = `${amount8}${tfhex4}${timehex}FFFFFFFF`;
-
-    const dateObj1 = new Date(serverTime);
-    const year1 = dateObj1.getFullYear().toString().slice(-2);
-    const month1 = (dateObj1.getMonth() + 1).toString().padStart(2, '0'); // Adding 1 since months are zero-indexed
-    const day1 = dateObj1.getDate().toString().padStart(2, '0');
-    const formattedDate = `${day1}${month1}${year1}`;
-    // console.log('naw date of time ',formattedDate);
-    const minutes = minute.toString().substring(0, 1);
-    //console.log("fornatedd Time ", formattedDate)
-    const formattedTime = `${hour}${minutes}`;
-
-    //console.log('checktime11111111111',formattedTime);
-    const ulrData = encryptData(totalData, '6D783230313139390000000000000000');
-    //  console.log('UrlsData: ', ulrData);
-    const finalUrls = `https://dk9936.github.io/re-tok-${toknid}-${sr}-${formattedDate}-${formattedTime}/${formatData}${ulrData}`;
-    // Construct the formatted date string in dd-mm-yy hh:mm:ss format
-    // console.log(formattedDate1);
-    const date = new Date(serverTime);
-    // Extract year, month, day, hours, minutes, and seconds
-    const year3 = date.getFullYear().toString().slice(-2); // Extract last 2 digits of the year
-    const month3 = ('0' + (date.getMonth() + 1)).slice(-2); // Adding leading zero if month is a single digit
-    const day3 = ('0' + date.getDate()).slice(-2); // Adding leading zero if day is a single digit
-    const hours3 = ('0' + date.getHours()).slice(-2); // Adding leading zero if hours is a single digit
-    const minutes3 = ('0' + date.getMinutes()).slice(-2); // Adding leading zero if minutes is a single digit
-    const seconds3 = ('0' + date.getSeconds()).slice(-2); // Adding leading zero if seconds is a single digit
-
-    // Construct the formatted date string in dd-mm-yy hh:mm:ss format
-    const formattedDate3 = `${day3}-${month3}-${year3}, ${hours3}:${minutes3}:${seconds3}`;
-    // eslint-disable-next-line
-    let mybalance = Number(balance).toFixed(2);
-    //  console.log('myAvailable', mybalance);
-    // eslint-disable-next-line
-    uploadDate(sr,
-      tknid,
-      formatData,
-      finalUrls,
-      formattedDate3,
-      formatData,
-      mybalance,
-      formattedAm,
-      tf,);
-
-    // console.log("finalUrls", finalUrls);
-    //sendPhoneMessage(finalUrls);
-    handleSendEmailMessage(finalUrls);
-    getPhoneNumberFromGroupName(finalUrls);
-
-
-
-
-    return finalUrls;
-  }
-  const upload = (getnerateRechargeToken) => {
 
   }
+
   // Assuming you've initialized Firebase with appropriate config
 
   // Get a reference to the Firebase database
@@ -647,6 +652,7 @@ function Adin() {
 
 
   const [modalMessage, setModalMessage] = useState('');
+  const [modalMessage1, setModalMessage1] = useState('');
 
 
 
@@ -655,7 +661,6 @@ function Adin() {
     const selectedCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
 
     if (selectedCheckboxes.length === 0) {
-
 
       setIsDialogOpen(true);
       setModalMessage('Please select at least one token before Generating.')
@@ -668,7 +673,6 @@ function Adin() {
 
     setLoading(true);
     const status = await Sessionid.checkInternetConnection(); // Call the function
-
     if (status === 'Poor connection.') {
       setIsDialogOpen(true);
       setModalMessage('No/Poor Internet connection. Cannot access server.');
@@ -721,9 +725,8 @@ function Adin() {
               const myurls = getnerateRechargeToken(time, '01', number, srNo, password, amount, balance, tarrifDataResult, tokenIdResult);
               //  console.log("Results:");
 
-
               // Push myurls into the array
-             // console.log("Dinesh: url-> ", myurls);
+              // console.log("Dinesh: url-> ", myurls);
 
               const isDuplicate = rechargeTokes.includes(myurls);
 
@@ -746,7 +749,6 @@ function Adin() {
 
               // await Message(emails, myurls );
 
-
               globalBalance = balance;
 
               return {
@@ -760,29 +762,37 @@ function Adin() {
 
               };
             } catch (error) {
-             // console.error("Error generating recharge token:", error);
+              // console.error("Error generating recharge token:", error);
               return null; // Handle error scenario as needed
             }
           }));
 
-       try{
-          Sessionid.updateSessionTimeActiveUser(numberPart);
-       }catch(error){
+          ///   Sessionid.updateSessionTimeActiveUser(numberPart);
 
-        setLoading(false);
-        setIsDialogOpen(true);
-        // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
-        const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry.`;
-        setModalMessage(errorMessage);
+          // try {
+          //   Sessionid.updateSessionTimeActiveUser(numberPart);
+          // } catch (error) {
 
-       }
+          //   setLoading(false);
+          //   setIsDialogOpen(true);
+          //   // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+          //   const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry.`;
+          //   setModalMessage(errorMessage);
 
-   
-          isDialogOpenSavedata(true);
-          setModalMessage('Data save successfully');
-          setLoading(false);
+          // }
 
-          //alert('data save successfully');
+
+          //   Update on 18-03-2024
+
+
+          // setIsDialogOpenSavedata(true);
+          // setModalMessage1('Data save successfully');
+          // setLoading(false);
+
+          // Sessionid.updateSessionTimeActiveUser(numberPart);
+
+          //  alert('data save successfully');
+          /// window.location.reload(); // This line reloads the page
 
           sendToken();
 
@@ -801,15 +811,16 @@ function Adin() {
               .then((snapshot) => {
                 const isUsedValue = snapshot.val()?.isUsed;
                 if (isUsedValue === true) {
-                  // console.log(`isUsed value is already true for ${srNumber}`);
+                  //   console.log(`isUsed value is already true for ${srNumber}`);
                   alreadyUsedSRNumbers.push(srNumber); // Store already used SR numbers
                   // No need to update isUsed here, as it's already true
                 } else {
                   return database
+
                     .ref(`/adminRootReference/meterDetails/${srNumber}/rechargeRequestToken`)
                     .update({ isUsed: true })
                     .then(() => {
-                      console.log(`isUsed value updated to true for ${srNumber}`);
+                      //  console.log(`isUsed value updated to true for ${srNumber}`);
                       // Perform any additional actions after updating the database
                     })
                     .catch((error) => {
@@ -852,7 +863,7 @@ function Adin() {
         setLoading(false);
         setIsDialogOpen(true);
         // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
-        const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
+        const errorMessage = `1Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
         setModalMessage(errorMessage);
 
       }
@@ -869,6 +880,7 @@ function Adin() {
 
 
   const uploadDate = async (
+
     srNumber,
     tokenId,
     token,
@@ -886,6 +898,58 @@ function Adin() {
     const baseUrlMeterDetails = database.ref('/adminRootReference/meterDetails/');
     const tokensRef = baseUrlMeterDetails.child(srNumber).child('rechargeToken');
 
+    const db = getDatabase();
+    const adminRootReference = ref(db, `/adminRootReference/meterDetails/${srNumber}/rechargeToken/${ltime}-${tk}`);
+
+    const fullAdminProfilePath = adminRootReference.toString();
+
+    // tokensRef.once('value', (snapshot) => {
+    //   let tokenCount = snapshot.numChildren();
+    //   if (tokenCount >= 20) {
+    //     // Fetch the oldest child
+    //     tokensRef.orderByKey().limitToFirst(1).once('value', (oldestSnapshot) => {
+    //       oldestSnapshot.forEach((childSnapshot) => {
+    //         // Remove the oldest child
+    //         tokensRef.child(childSnapshot.key).remove().then(() => {
+    //           console.log('Oldest Data Removed');
+    //         }).catch((error) => {
+    //           console.error('Error removing oldest data:', error);
+    //         });
+    //       });
+    //     });
+    //   }
+
+    //   tokensRef.child(`${ltime}-${tk}`).set({
+    //     balance: "null",
+    //     isEmergency: false,
+    //     isOC: false,
+    //     kwh: "null",
+    //     phoneNumber: number, //adminPhone.toString()
+    //     link: finalUrls,
+    //     rechargeAmount: formattedAm, //rechargeAmount.toString()
+    //     rechargeToken: formatData, // finalUrls.toString()
+    //     serialNumber: srNumber,
+    //     tariffRate: tfRate,
+    //     tokenGenerationTime: formattedDate3,
+    //     tokenId: tk
+    //   }).then(() => {
+    //     // console.log('Data Updated Successfully');
+
+    //     // sendMessage();
+    //     //  handleSendEmailMessage();
+    //     // sendPhoneMessage();
+
+    //     // alert('Data upload successful');
+
+
+    //     // window.location.reload(); // This line reloads the page
+    //   }).catch((error) => {
+    //     console.error('Error updating data:', error);
+    //   });
+
+    //   updateTokenCount(tk, srNumber);
+    // });
+
     tokensRef.once('value', (snapshot) => {
       let tokenCount = snapshot.numChildren();
       if (tokenCount >= 20) {
@@ -901,38 +965,49 @@ function Adin() {
           });
         });
       }
-
-      tokensRef.child(`${ltime}-${tk}`).set({
-        balance: "null",
-        isEmergency: false,
-        isOC: false,
-        kwh: "null",
-        phoneNumber: number, //adminPhone.toString()
-        link: finalUrls,
-        rechargeAmount: formattedAm, //rechargeAmount.toString()
-        rechargeToken: formatData, // finalUrls.toString()
-        serialNumber: srNumber,
-        tariffRate: tfRate,
-        tokenGenerationTime: formattedDate3,
-        tokenId: tk
-      }).then(() => {
-        // console.log('Data Updated Successfully');
-
-        // sendMessage();
-        //  handleSendEmailMessage();
-        // sendPhoneMessage();
-
-
-        // alert('Data upload successful');
-
-
-        // window.location.reload(); // This line reloads the page
-      }).catch((error) => {
-        console.error('Error updating data:', error);
-      });
-
-      updateTokenCount(tk, srNumber);
     });
+
+
+    const saveTariffRate = {
+      balance: "null",
+      isEmergency: false,
+      isOC: false,
+      kwh: "null",
+      phoneNumber: number, //adminPhone.toString()
+      link: finalUrls,
+      rechargeAmount: formattedAm, //rechargeAmount.toString()
+      rechargeToken: formatData, // finalUrls.toString()
+      serialNumber: srNumber,
+      tariffRate: tfRate,
+      tokenGenerationTime: formattedDate3,
+      tokenId: tk
+    };
+
+    const dataToSend = {
+      [fullAdminProfilePath]: saveTariffRate,
+    };
+
+    try {
+      const result = await Sessionid.callWriteRtdbFunction(dataToSend);
+      console.log('Data:', result);
+
+      // setisModalOpenModelalert(true);
+      // setLoading(false);
+
+      setIsDialogOpenSavedata(true);
+      setModalMessage1('Data save successfully');
+      setLoading(false);
+
+
+    } catch (error) {
+      setLoading(false);
+      setIsDialogOpen(true);
+      const errorMessage = `Response not received from server-A. Please check if the transaction completed successfully, else retry. (${error}).`;
+      setModalMessage(errorMessage);
+    }
+
+    updateTokenCount(tk, srNumber);
+
   };
 
   function updateTokenCount(token, srNumber) {
@@ -1455,7 +1530,7 @@ function Adin() {
         let part4 = rechargeTokenes.substring(117);
 
         let phoneNumber = reversePhones[i];
-        console.log("Mera phone number", phoneNumber);
+        // console.log("Mera phone number", phoneNumber);
 
         const otpCode = urls;
         // console.log('Generated Token:', urls); // Log the OTP in the console
@@ -1466,7 +1541,7 @@ function Adin() {
         try {
           const response = await axios.get(apiUrl);
           // console.log(response.data);
-          console.log('Token sent successfully!');
+          //  console.log('Token sent successfully!');
         } catch (error) {
           console.error('Error sending Token:', error);
           console.log('Failed to send Token. Please try again.');
@@ -1516,23 +1591,38 @@ function Adin() {
 
   const closeDialogSavedata = () => {
     setIsDialogOpenSavedata(false);
-    // window.location.reload(); // This will reload the page
+   // window.location.reload(); // This will reload the page
   };
 
-
   //No inter connection 
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+  
   const closeDialog = () => {
     setLoading(false);
     setIsDialogOpen(false);
 
-    // window.location.reload(); // This will reload the page
+     const result = Sessionid.isCheckInterNet();
+     if (result) {
+         
+      navigate('/')
+        
+     }
+     else
+     {
+
+      window.location.reload();
+
+     }
+
+   // window.location.reload(); // This will reload the page
   };
 
 
-
+  const handleClick = () => {
+    console.log("You clicked me!");
+    // Go back to the previous page
+    navigate('/admin');
+  };
 
 
 
@@ -1542,36 +1632,47 @@ function Adin() {
 
 
 
-      {onlineStatus !== null && onlineStatus === false ? (
+      {/* {onlineStatus !== null && onlineStatus === false ? (
         <div style={{ textAlign: 'center', marginTop: '20%' }}>
 
           <h3>No Internet Connection</h3>
         </div>
-      ) : (
+      ) : ( */}
 
         <>
 
 
-
           {loading ? (
-            <div style={{ position: 'fixed', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: '9999'
+            }}>
               <div className="spinner-border text-danger" role="status">
                 <span className="sr-only">Loading...</span>
               </div>
             </div>
           ) : null}
 
-
-
           <div style={{ marginLeft: '15%', }}>
 
             <div>
               <div>
+                <div style={{ marginLeft: '2%', }} onClick={handleClick}>
+                  <h5>Back</h5>
+                </div>
                 <div>
                   {tokens.length > 0 ? (
-                    <h2 className='Token_available'>Pending Request(s).</h2>
+                    <h2 className='Token_available'>Pending Request(s)</h2>
                   ) : (
-                    <h2 className='Token_available'>No Pending Request.</h2>
+                    <h2 className='Token_available'>No Pending Request</h2>
                   )}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1791,14 +1892,13 @@ function Adin() {
 
         </>
 
-      )}
+      {/* )} */}
 
 
       <Modal show={isDialogOpenSavedata} onHide={closeDialogSavedata} backdrop="static" style={{ marginTop: '3%' }}>
-        {/* <Modal.Header closeButton>
-      </Modal.Header>  */}
+
         <Modal.Body>
-          <p> {modalMessage}</p>
+          <p> {modalMessage1}</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={closeDialogSavedata}>
@@ -1810,8 +1910,7 @@ function Adin() {
 
 
       <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
-        {/* <Modal.Header closeButton>
-      </Modal.Header>  */}
+
         <Modal.Body>
           <p> {modalMessage}</p>
         </Modal.Body>
@@ -1821,6 +1920,22 @@ function Adin() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+
+
+      {/* <Modal show={isDialogOpenResponse} onHide={closeDialogResponse} backdrop="static" style={{ marginTop: '3%' }}>
+
+<Modal.Body>
+  <p> {modalMessageResponse}</p>
+</Modal.Body>
+<Modal.Footer>
+  <Button variant="primary" onClick={closeDialogResponse}>
+    Close
+  </Button>
+</Modal.Footer>
+</Modal> */}
+
+
 
     </>
 

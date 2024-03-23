@@ -9,6 +9,8 @@ import '../adminLogin/login.css'
 import CommonFuctions from '../commonfunction';
 
 import Navbar from '../adminLogin/navbar';
+import { faL } from '@fortawesome/free-solid-svg-icons';
+import { Modal, Button } from 'react-bootstrap';
 
 
 
@@ -28,6 +30,14 @@ function Phoneotp() {
   const { enteredPhoneNumberModal } = location.state || {};
   // const { email } = location.state || {};
   const { enteredPasswordModal } = location.state || {};
+  const [alertMessage, setAlertMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const [modalMessage, setModalMessage] = useState('');
+
+
+
+
 
   // console.log('new Address ', initialEmail);
 
@@ -42,6 +52,7 @@ function Phoneotp() {
           const numberPart = emailParts[0];
           // console.log("Number", numberPart);
           setPhoneNumber(numberPart);
+          setLoading(false);
 
 
         }
@@ -92,30 +103,58 @@ function Phoneotp() {
 
 
 
-  const handleGetOTP = () => {
-    console.log('phone number 1212: ', enteredPhoneNumberModal);
-    const phoneSendOtp = new PhoneSendOtp(enteredPhoneNumberModal);
-    phoneSendOtp.sendOTP(enteredPhoneNumberModal);
+  const handleGetOTP = async () => {
+    // console.log('phone number 1212: ', enteredPhoneNumberModal);
+    // const phoneSendOtp = new PhoneSendOtp(enteredPhoneNumberModal);
+    // phoneSendOtp.sendOTP(enteredPhoneNumberModal);
+
+    try {
+      const phoneSendOtp = new PhoneSendOtp(enteredPhoneNumberModal);
+      const result = await phoneSendOtp.sendOTP(enteredPhoneNumberModal);
+      if (result === 411) {
+        setAlertMessage(`Invalid number : (${result})`);
+        setLoading(false);
+      } else {
+        navigate('/emailandphoneverify', { state: { enteredPhoneNumberModal } });
+
+      }
+    } catch (otpError) {
+    }
+
 
   };
 
   const handleButtonClick1 = async (event) => {
+ 
+    setLoading(true);
+   
+    const status = await SessionTime.checkInternetConnection(); // Call the function
+    if (status === 'Poor connection.') {
+        setIsDialogOpen(true);
+        setModalMessage('No/Poor Internet connection. Cannot access server.');
+        setLoading(false);
+        return;
+    }
+
+
+    setAlertMessage('');
+    setLoading(true);
 
     const storeSessionId = localStorage.getItem('sessionId');
     const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
     if (storeSessionId === sessionId) {
 
       SessionUpdate();
-    event.preventDefault();
-    handleButtonClick(event);
-    handleGetOTP();
-    navigate('/emailandphoneverify', { state: { enteredPhoneNumberModal } });
-    
-  } else {
-    alert("You have been logged-out due to log-in from another device.");
-    // console.log('you are logg out ');
-    handleLogout();
-  }
+      event.preventDefault();
+      handleButtonClick(event);
+      handleGetOTP();
+      // navigate('/emailandphoneverify', { state: { enteredPhoneNumberModal } });
+
+    } else {
+      alert("You have been logged-out due to log-in from another device.");
+      // console.log('you are logg out ');
+      handleLogout();
+    }
 
 
   };
@@ -135,10 +174,19 @@ function Phoneotp() {
       history('/'); // Change '/login' to your login page route
     }).catch((error) => {
       // Handle any errors during logout
-    //  console.error('Error logging out:', error.message);
+      //  console.error('Error logging out:', error.message);
     })
 
   }
+
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const closeDialog = () => {
+      setIsDialogOpen(false);
+      // window.location.reload(); // This will reload the page
+  };
+
 
 
 
@@ -149,23 +197,41 @@ function Phoneotp() {
     <>
 
 
-<div>
+      <div>
 
-<Navbar />
+        <Navbar />
 
-</div>
+      </div>
       {/* 
       <div>New Phone Number :  {enteredPhoneNumberModal}</div>
 
       <div>Email : {email}</div>
 
       <div> New Password  : {enteredPasswordModal}</div> */}
+      {loading ? (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: '9999'
+        }}>
+          <div className="spinner-border text-danger" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+        </div>
+      ) : null}
 
       <div className='containers' >
         <div className='formgroup'>
-          <div>
+          {/* <div>
             <h3>Verify Mobile Number & Email-id</h3>
-          </div>
+          </div> */}
 
           <div>
             <label htmlFor="phoneNumber">Mobile Number</label>
@@ -196,12 +262,37 @@ function Phoneotp() {
               <i class="fa-solid fa-envelope"></i>
             </div>
 
+            {alertMessage && (
+              <div className="alert-container">
+                <p style={{ color: 'red' }}><i className="fas fa-exclamation-circle" style={{ color: 'red' }}></i> {alertMessage}</p>
+              </div>
+            )}
+
+
           </div>
           <div className='d-grid col-6'>
             <button className='btn btn-primary' onClick={handleButtonClick1} >GET OTP</button>
           </div>
         </div>
       </div>
+
+
+      <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
+                    {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                    <Modal.Body>
+                        <p> {modalMessage}</p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="primary" onClick={closeDialog}>
+                            Close
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+
+
+
     </>
   )
 }

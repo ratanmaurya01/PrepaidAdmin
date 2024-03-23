@@ -17,8 +17,6 @@ import checkInternetConnection from '../commonfunction';
 import UseConfirmBeforeLeave from '../Browserleave/leavebroser'
 import PopupDialog from '../userInterface/Modelpop';
 
-
-
 import 'firebase/auth';
 import 'firebase/database';
 import 'firebase/functions';
@@ -54,7 +52,32 @@ function Admindetail() {
     const [password, setPassword] = useState('');
     const [key, setKey] = useState('');
     const [modalMessage, setModalMessage] = useState('');
+
     const [modalMessage1, setModalMessage1] = useState('');
+
+
+
+
+
+    // useEffect(() => {
+    //     const checkInter = async () => {
+    //         const result = await sessionTime.isCheckInterNet();
+    //         setOnlineStatus(result);
+    //         //  If no internet and already loading, automatically switch to show no internet after 5 seconds
+    //         if (!result && loading) {
+    //             setTimeout(() => {
+    //                 setLoading(false);
+    //             }, 5000); // 5 seconds
+    //         }
+    //     };
+    //     // Call checkInter function initially
+    //     checkInter();
+    //     // Set up an interval to check internet status periodically
+    //     const interval = setInterval(checkInter, 5000); // Check every 5 seconds
+    //     // Clean up interval on component unmount
+    //     return () => clearInterval(interval);
+    // }, [loading]); // Include loading in dependencies array to listen for its changes
+
 
 
 
@@ -330,6 +353,10 @@ function Admindetail() {
         }
         else {
             setOnlineStatus(result);
+            setIsDialogOpen(true);
+            setModalMessage('No/Poor Internet connection. Cannot access server.');
+            setLoading(false);
+
             // alert(" No internet connection ");
         }
 
@@ -439,9 +466,9 @@ function Admindetail() {
                     const dataToSend = {
                         [fullAdminProfilePath]: newData
                     };
+
                     try {
                         await callWriteRtdbFunction(dataToSend);
-
                         setModalMessage1('Data Saved Successfully.');
                         setIsDialogOpen1(true)
                         setLoading(false);
@@ -450,9 +477,9 @@ function Admindetail() {
                     catch (error) {
 
                         setLoading(false);
-                        setIsDialogOpen(true);
+                        setIsDialogOpen1(true);
                         const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
-                        setModalMessage(errorMessage);
+                        setModalMessage1(errorMessage);
 
                     }
 
@@ -464,12 +491,12 @@ function Admindetail() {
             } catch (error) {
                 setLoading(false);
 
-                setIsDialogOpen(true);
+                setIsDialogOpen1(true);
                 // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
 
                 const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
 
-                setModalMessage(errorMessage);
+                setModalMessage1(errorMessage);
             }
         } else {
             setOnlineStatus(result);
@@ -645,6 +672,7 @@ function Admindetail() {
     const handlesaveButton = async () => {
 
 
+
         if (newPhone === phoneNumber) {
             // If phoneNo2 matches the extracted number, handle the error
             alert("Mobile number already exist..");
@@ -671,7 +699,26 @@ function Admindetail() {
             return;
         }
 
+
+
+        setLoading(true);
+
+
+
+        const status = await sessionTime.checkInternetConnection(); // Call the function
+        //  setShowChecker(status);
+        if (status === 'Poor connection.') {
+            setIsDialogOpen(true);
+            setModalMessage('No/Poor Internet connection. Cannot access server.');
+            setLoading(false);
+            /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+            return;
+            //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
+            //  return;
+        }
+
         if (newName !== name) {
+
             // test name and email and phone and address
             if (newEmail != email) {
                 if (newPhone != phoneNo2) {
@@ -719,6 +766,8 @@ function Admindetail() {
             }
         }
         else if (newEmail != email) {
+
+
             if (newPhone != phoneNo2) {
                 if (newPhone !== '') {
                     if (newAddress != address) {
@@ -744,6 +793,8 @@ function Admindetail() {
             }
         }
         else if (newPhone != phoneNo2) {
+
+
             if (newPhone !== '') {
                 if (newAddress != address) {
                     //  console.log("phone  address changed");
@@ -766,6 +817,7 @@ function Admindetail() {
 
             setIsDialogOpen(true);
             setModalMessage('No change in existing data');
+            setLoading(false);
             // alert("No change in existing data.")
         }
 
@@ -810,23 +862,34 @@ function Admindetail() {
         // window.location.reload(); // This will reload the page
     };
 
-
     const [isDialogOpen1, setIsDialogOpen1] = useState(false);
 
-    const openDialog1 = () => {
-        setIsDialogOpen(true);
-    };
-
     const closeDialog1 = () => {
-        setIsDialogOpen(false);
-        window.location.reload(); // This will reload the page
+        // setIsDialogOpen1(false);
+        // window.location.reload(); // This will reload the page
+
+        if (navigator.onLine) {
+            window.location.reload(); // Reload the page if internet is available
+        } else {
+           navigate('/') // Redirect to another page if no internet
+        }
+
+
     };
 
     // if Check when save data then at a time  Back Button or close tag  ...
 
     const [dataSaved, setDataSaved] = useState(false); // Track if data has been saved
-    UseConfirmBeforeLeave(dataSaved);
+    // UseConfirmBeforeLeave(dataSaved);
 
+
+
+
+
+    const handleBackButton = () => {
+
+        navigate('/');
+    }
 
 
     const loadingStyle = {
@@ -838,188 +901,209 @@ function Admindetail() {
 
             <div style={loadingStyle}>
 
-                <Navbar  style={{ pointerEvents: 'none' }} />
+                <Navbar style={{ pointerEvents: 'none' }} />
 
                 <>
-                    {onlineStatus !== null && onlineStatus === false ? (
+                    {/* {onlineStatus !== null && onlineStatus === false ? (
                         <div style={{ textAlign: 'center', marginTop: '20%' }}>
                             <h3>No Internet Connection</h3>
                         </div>
-                    ) : (
-                        <>
-                            {/* {loading ? (
-                            <div style={{ textAlign: 'center', marginTop: '20%' }}>
-                                <div className="spinner-border text-danger" role="status">
-                                    <span className="sr-only"></span>
-                                </div>
-                            </div>
-                        ) : ( */}
+                    ) : ( */}
+                    <>
 
-                            {loading ? (
+
+                        {/* {loading ? (
                                 <div style={{ position: 'fixed', top: '60%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
                                     <div className="spinner-border text-danger" role="status">
                                         <span className="sr-only">Loading...</span>
                                     </div>
                                 </div>
-                            ) : null}
+                            ) : null} */}
 
-                            <div className='containers' style={{ marginTop: '6%', marginBottom: '5px' }} >
+                        {loading ? (
+                            <div style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                zIndex: '9999'
+                            }}>
+                                <div className="spinner-border text-danger" role="status">
+                                    <span className="sr-only">Loading...</span>
+                                </div>
+                            </div>
+                        ) : null}
 
-                                <div style={{ marginTop: '1px' }} >
-                                    <div style={{ marginTop: '1px' }} className='AdminPhoto'>
-                                        <img
-                                            // style={{ height: '20%', width: '20%', }}
-                                            src={adminprofile}
-                                            alt="adminprofile"
+
+
+                        <div className='containers' style={{ marginTop: '6%', marginBottom: '5px' }} >
+
+                            <div style={{ marginTop: '1px' }} >
+                                <div style={{ marginTop: '1px' }} className='AdminPhoto'>
+                                    <img
+                                        // style={{ height: '20%', width: '20%', }}
+                                        src={adminprofile}
+                                        alt="adminprofile"
+                                    />
+                                </div>
+                                <div className='style'>
+                                    <p style={{ textAlign: 'center', marginBottom: '5px' }}> < Createtime /></p>
+                                </div>
+                            </div>
+                            <div className='formgroup'>
+                                <div style={{ marginBottom: '5px' }}>
+                                    <label htmlFor="phoneNumber">Mobile Number</label>
+                                    <div className="input-container1">
+                                        <input
+                                            type="text"
+                                            className='form-control'
+                                            value={phoneNumber ? `+91${phoneNumber}` : '+91'} // Concatenate with phoneNumber state if available, otherwise show +91
+                                            onChange={(e) => setPhoneNumber(e.target.value.replace('+91', ''))} // To allow users to modify without +91
+                                            placeholder="Mobile Number"
+                                            readOnly
+                                            disabled
                                         />
-                                    </div>
-                                    <div className='style'>
-                                        <p style={{ textAlign: 'center', marginBottom: '5px' }}> < Createtime /></p>
+                                        <i class="fas fa-phone"></i>
                                     </div>
                                 </div>
-                                <div className='formgroup'>
-                                    <div style={{ marginBottom: '5px' }}>
-                                        <label htmlFor="phoneNumber">Mobile Number</label>
-                                        <div className="input-container1">
-                                            <input
-                                                type="text"
-                                                className='form-control'
-                                                value={phoneNumber ? `+91${phoneNumber}` : '+91'} // Concatenate with phoneNumber state if available, otherwise show +91
-                                                onChange={(e) => setPhoneNumber(e.target.value.replace('+91', ''))} // To allow users to modify without +91
-                                                placeholder="Mobile Number"
-                                                readOnly
-                                                disabled
-                                            />
-                                            <i class="fas fa-phone"></i>
-                                        </div>
+                                <div style={{ marginBottom: '5px' }}>
+                                    <label htmlFor="Name">Name</label>
+                                    <div className="input-container1">
+                                        <input
+                                            type="text"
+                                            className='form-control'
+                                            placeholder="Name"
+                                            value={newName !== null ? newName : name}
+                                            onChange={handleNameChange}
+                                            maxLength={20}
+                                            disabled={loading}
+
+                                        />
+                                        <i class="fa-solid fa-user"></i>
                                     </div>
-                                    <div style={{ marginBottom: '5px' }}>
-                                        <label htmlFor="Name">Name</label>
-                                        <div className="input-container1">
-                                            <input
-                                                type="text"
-                                                className='form-control'
-                                                placeholder="Name"
-                                                value={newName !== null ? newName : name}
-                                                onChange={handleNameChange}
-                                                maxLength={20}
-                                                disabled={loading}
+                                    <span style={{ color: 'red' }}>{errorMessage}</span>
 
-                                            />
-                                            <i class="fa-solid fa-user"></i>
-                                        </div>
-                                        <span style={{ color: 'red' }}>{errorMessage}</span>
+                                    <span style={{ color: 'red' }}>  {errorName && <p className="error-message">{errorName}</p>}</span>
+                                </div>
+                                <div style={{ marginBottom: '5px' }}>
+                                    <label htmlFor="Name">E-mail</label>
+                                    <div className='input-container1'>
+                                        <input
+                                            type="text"
+                                            className='form-control'
+                                            placeholder="email"
+                                            value={newEmail !== null ? newEmail : email}
+                                            onChange={handleEmailChange}
+                                            disabled={loading}
+                                        />
 
-                                        <span style={{ color: 'red' }}>  {errorName && <p className="error-message">{errorName}</p>}</span>
-                                    </div>
-                                    <div style={{ marginBottom: '5px' }}>
-                                        <label htmlFor="Name">E-mail</label>
-                                        <div className='input-container1'>
-                                            <input
-                                                type="text"
-                                                className='form-control'
-                                                placeholder="email"
-                                                value={newEmail !== null ? newEmail : email}
-                                                onChange={handleEmailChange}
-                                                disabled={loading}
-                                            />
-
-                                            <i class="fa-solid fa-envelope"></i>
-                                        </div>
-
-                                        {emailError && (
-                                            <div style={{ color: 'red' }}>{emailError}</div>
-                                        )}
-
-                                        <span style={{ color: 'red' }}>{errorMessage1}</span>
-
+                                        <i class="fa-solid fa-envelope"></i>
                                     </div>
 
-                                    <div style={{ marginBottom: '5px' }}>
-                                        <label htmlFor="alternatphonee">Alternate Mobile Number</label>
-                                        <div className='input-container1'>
-                                            <input
-                                                type="text"
-                                                // className='form-control'
-                                                className={`form-control ${phoneerror ? 'is-invalid' : ''} `}
-                                                placeholder="Alternate Mobile Number"
-                                                value={newPhone !== null ? newPhone : phoneNo2}
-                                                onChange={handlePhoneChange}
-                                                maxLength={10}
-                                                disabled={loading}
-                                            />
-                                            <i class="fas fa-phone"></i>
-                                        </div>
-                                        {/* {error && <p style={{ color: 'red' }}>{error}</p>} */}
-                                        {phoneerror && <p className="invalid-feedback">{phoneerror}</p>}
-                                        <span style={{ color: 'red' }}>{erronphoneMessage}</span>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="Address">Address</label>
-                                        <div className='input-container1' >
-                                            <input
-                                                type="text"
-                                                className='form-control'
-                                                placeholder="Address"
-                                                value={newAddress !== null ? newAddress : address}
-                                                onChange={handleAddressChange}
-                                                maxLength={40}
-                                                disabled={loading}
-                                            />
-                                            <i class="fa-solid fa-address-card"></i>
-                                        </div>
+                                    {emailError && (
+                                        <div style={{ color: 'red' }}>{emailError}</div>
+                                    )}
 
-                                        {errorAddres && (
-                                            <div style={{ color: 'red' }}>{errorAddres}</div>
-                                        )}
+                                    <span style={{ color: 'red' }}>{errorMessage1}</span>
+
+                                </div>
+
+                                <div style={{ marginBottom: '5px' }}>
+                                    <label htmlFor="alternatphonee">Alternate Mobile Number</label>
+                                    <div className='input-container1'>
+                                        <input
+                                            type="text"
+                                            // className='form-control'
+                                            className={`form-control ${phoneerror ? 'is-invalid' : ''} `}
+                                            placeholder="Alternate Mobile Number"
+                                            value={newPhone !== null ? newPhone : phoneNo2}
+                                            onChange={handlePhoneChange}
+                                            maxLength={10}
+                                            disabled={loading}
+                                        />
+                                        <i class="fas fa-phone"></i>
                                     </div>
-                                    <div className="d-grid col-5">
+                                    {/* {error && <p style={{ color: 'red' }}>{error}</p>} */}
+                                    {phoneerror && <p className="invalid-feedback">{phoneerror}</p>}
+                                    <span style={{ color: 'red' }}>{erronphoneMessage}</span>
+                                </div>
+                                <div>
+                                    <label htmlFor="Address">Address</label>
+                                    <div className='input-container1' >
+                                        <input
+                                            type="text"
+                                            className='form-control'
+                                            placeholder="Address"
+                                            value={newAddress !== null ? newAddress : address}
+                                            onChange={handleAddressChange}
+                                            maxLength={40}
+                                            disabled={loading}
+                                        />
+                                        <i class="fa-solid fa-address-card"></i>
+                                    </div>
+
+                                    {errorAddres && (
+                                        <div style={{ color: 'red' }}>{errorAddres}</div>
+                                    )}
+                                </div>
+                                {/* <div className="d-grid col-5">
                                         <button className='btn btn-primary' disabled={loading} onClick={handlesaveButton} >Save Details</button>
-                                    </div>
+                                    </div> */}
+                            </div>
+                            <div className="d-flex justify-content-between w-100" >
+                                <div style={{ marginLeft: '10%' }}>
+                                    <button className='btn btn-danger' disabled={loading} onClick={handleBackButton} >Back</button>
                                 </div>
+
+                                <div style={{ marginRight: '10%' }}>
+                                    <button className='btn btn-primary' disabled={loading} onClick={handlesaveButton} >Save Details</button>
+                                </div>
+
+
 
                             </div>
+                        </div>
 
-                            {/* )} */}
+                        {/* )} */}
 
-                        </>
-                    )}
+                    </>
+                    {/* )} */}
                 </>
 
-
-
-          
-
-
-            <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' ,pointerEvents: loading ? 'none' : 'auto'}}>
-                {/* <Modal.Header closeButton>
+                <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
+                    {/* <Modal.Header closeButton>
       </Modal.Header>  */}
-                <Modal.Body>
-                    <p> {modalMessage}</p>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="primary" onClick={closeDialog}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+                    <Modal.Body>
+                        <p> {modalMessage}</p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="primary" onClick={closeDialog}>
+                            Close
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
 
 
-            <Modal show={isDialogOpen1} onHide={closeDialog1} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
-                {/* <Modal.Header closeButton>
+                <Modal show={isDialogOpen1} onHide={closeDialog1} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
+                    {/* <Modal.Header closeButton>
       </Modal.Header>  */}
-                <Modal.Body>
-                    <p> {modalMessage1}</p>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="primary" onClick={closeDialog1}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+                    <Modal.Body>
+                        <p> {modalMessage1}</p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="primary" onClick={closeDialog1}>
+                            Close
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
 
-      
-        
+
+
             </div>
         </>
     )

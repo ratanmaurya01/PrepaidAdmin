@@ -56,9 +56,7 @@ const Test = () => {
     const [editModeSerialNumber, setEditModeSerialNumber] = useState(null);
     const [loading, setLoading] = useState(false);
     const [numberPart, setNumberPart] = useState(null); // State to store numberPart
-
     const [user, setUser] = useState(null);
-
     const [error, setError] = useState('');
     const [modalIsOpen, setModalIsOpen] = useState(false);
     let [inputValues, setInputValues] = useState({
@@ -79,27 +77,27 @@ const Test = () => {
     const [tariffRateError, setTariffRateError] = useState('');
     const [groupTariffRate, setGroupTariifRate] = useState('');
 
-
     const [onlineStatus, setOnlineStatus] = useState(null);
 
-    useEffect(() => {
-        const checkInter = async () => {
-            const result = await cfunction.isCheckInterNet();
-            setOnlineStatus(result);
-            //  If no internet and already loading, automatically switch to show no internet after 5 seconds
-            if (!result && loading) {
-                setTimeout(() => {
-                    setLoading(false);
-                }, 5000); // 5 seconds
-            }
-        };
-        // Call checkInter function initially
-        checkInter();
-        // Set up an interval to check internet status periodically
-        const interval = setInterval(checkInter, 5000); // Check every 5 seconds
-        // Clean up interval on component unmount
-        return () => clearInterval(interval);
-    }, [loading]); // Include loading in dependencies array to listen for its changes
+
+    // useEffect(() => {
+    //     const checkInter = async () => {
+    //         const result = await cfunction.isCheckInterNet();
+    //         setOnlineStatus(result);
+    //         //  If no internet and already loading, automatically switch to show no internet after 5 seconds
+    //         if (!result && loading) {
+    //             setTimeout(() => {
+    //                 setLoading(false);
+    //             }, 5000); // 5 seconds
+    //         }
+    //     };
+    //     // Call checkInter function initially
+    //     checkInter();
+    //     // Set up an interval to check internet status periodically
+    //     const interval = setInterval(checkInter, 5000); // Check every 5 seconds
+    //     // Clean up interval on component unmount
+    //     return () => clearInterval(interval);
+    // }, [loading]); // Include loading in dependencies array to listen for its changes
 
 
 
@@ -114,7 +112,20 @@ const Test = () => {
 
 
     const handleSearch = async (phoneNumber) => {
+
         setLoading(true);
+        const status = await cfunction.checkInternetConnection(); // Call the function
+        //  setShowChecker(status);
+        if (status === 'Poor connection.') {
+            setIsDialogOpen(true);
+            setmodalMessage('No/Poor Internet connection. Cannot access server.');
+            setLoading(false);
+            /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+            return;
+            //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
+            //  return;
+        }
+
         const dataRef = database.ref(`/adminRootReference/tenantDetails/${phoneNumber}`);
         dataRef.once('value', (snapshot) => {
 
@@ -248,6 +259,8 @@ const Test = () => {
     }, [serialOptions, meterList]);
 
     const handleSearch1 = async (numberPart) => {
+
+
         try {
             if (numberPart === undefined || numberPart === null) {
                 return;
@@ -770,8 +783,8 @@ const Test = () => {
                                             // window.location.reload(); // Reload the page
                                         })
                                         .catch(error => {
-                                            console.error("Error updating data:", error);
-                                            alert("Failed to update data. Please try again.");
+                                         //   console.error("Error updating data:", error);
+                                         //   alert("Failed to update data. Please try again.");
                                         });
                                 } else if (updateroupName !== groupName) {
                                     newRef.child(editModeSerialNumber).set(updatedData)
@@ -824,11 +837,10 @@ const Test = () => {
 
         } catch (error) {
 
-
-            setLoading(false);
             setIsDialogOpen(true);
-            const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry. `;
+            const errorMessage = `Response not recieved  from server-S. Please check if transaction completed successfully, else retry. (${error}). `;
             setmodalMessage(errorMessage);
+            setLoading(false);
 
         }
 
@@ -992,7 +1004,6 @@ const Test = () => {
         setEditedSerialNumber(newSerialNumber);
     };
 
-
     const handleDeletebutton = async (serialNumberToDelete) => {
 
         setLoading(true);
@@ -1024,13 +1035,14 @@ const Test = () => {
 
                     if (confirmDelete) {
                         const dataRef = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${newgroupName}/${serialNumberToDelete}`);
+                       
+                       
                         const findGroupChild = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${newgroupName}`);
 
                         dataRef.remove()
                             .then(() => {
                                 // Alert message after successful delete
                                 //  alert("Data deleted successfully!");
-
 
                                 setIsDialogOpen1(true);
                                 const errorMessage = `Data deleted successfully! `;
@@ -1219,8 +1231,6 @@ const Test = () => {
                 if (groupName && groupName !== selectedGroupName) {
                     await currentDataRef.remove();
                 }
-
-
 
                 setIsDialogOpen1(true);
                 const errorMessage = `Data save successfully `;
@@ -1738,7 +1748,6 @@ const Test = () => {
         setSelectedGroupName(null);
     };
 
-
     const history = useNavigate();
     const handleLogout = () => {
         auth.signOut().then(() => {
@@ -1770,7 +1779,16 @@ const Test = () => {
     }
 
 
-    const handleDeleteGroupname = async () => {
+    const handleDeleteGroupname = () => {
+
+        setmodalMessage(`Are you sure you want to delete this data?`);
+        setisdeletedGroup(true);
+
+
+    }
+
+
+    const handleDeltedGroup = async () => {
 
         setLoading(true);
         const status = await cfunction.checkInternetConnection(); // Call the function
@@ -1784,10 +1802,6 @@ const Test = () => {
             //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
             //  return;
         }
-
-
-
-
         const storeSessionId = localStorage.getItem('sessionId');
 
         try {
@@ -1878,6 +1892,24 @@ const Test = () => {
 
 
 
+    const [isdeletedGroup, setisdeletedGroup] = useState(false);
+
+    const isConfirmedYesgroup = () => {
+        setisdeletedGroup(false);
+        handleDeltedGroup();
+        setLoading(true);
+
+    }
+
+    const closedeletedGroup = () => {
+        setisdeletedGroup(false);
+
+    };
+
+
+
+
+
 
     const loadingStyle = {
         pointerEvents: loading ? 'none' : 'auto', // Disable pointer events if loading, otherwise enable
@@ -1890,36 +1922,55 @@ const Test = () => {
             <div style={loadingStyle}>
                 <Navbar style={{ pointerEvents: 'none' }} />
 
-                {onlineStatus !== null && onlineStatus === false ? (
+                {/* {onlineStatus !== null && onlineStatus === false ? (
                     <div style={{ textAlign: 'center', marginTop: '20%' }}>
-                        {/* No Internet Connection */}
+                     
                         <h3>No Internet Connection</h3>
                     </div>
-                ) : (
+                ) : ( */}
 
-                    <>
-                        {/* <div style={{ textAlign: 'center', }}>
+                <>
+                    {/* <div style={{ textAlign: 'center', }}>
 
             </div> */}
 
 
-                        {loading ? (
+                    {/* {loading ? (
                             <div style={{ pointerEvents: 'none', position: 'fixed', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
                                 <div className="spinner-border text-danger" role="status">
                                     <span className="sr-only">Loading...</span>
                                 </div>
                             </div>
-                        ) : null}
+                        ) : null} */}
 
-                        < div >
-                            <div>
-                                <div style={{ margin: '0' }}>
-                                    <div style={{ display: 'flex' }}>
-                                        <div style={{ marginLeft: '10%', marginTop: '1%', flex: 1 }}>
-                                            {activeComponent === 'addConsumer' && <AddConsumer />}
-                                            {activeComponent === 'consumerDetails' && <Consumerdetails />}
-                                        </div>
-                                        {/* <div className='sidebar ' style={{ marginTop: '3%', width: '20%' }}>
+                    {loading ? (
+                        <div style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            zIndex: '9999'
+                        }}>
+                            <div className="spinner-border text-danger" role="status">
+                                <span className="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    ) : null}
+
+                    < div >
+                        <div>
+                            <div style={{ margin: '0' }}>
+                                <div style={{ display: 'flex' }}>
+                                    <div style={{ marginLeft: '10%', marginTop: '1%', flex: 1 }}>
+                                        {activeComponent === 'addConsumer' && <AddConsumer />}
+                                        {activeComponent === 'consumerDetails' && <Consumerdetails />}
+                                    </div>
+                                    {/* <div className='sidebar ' style={{ marginTop: '3%', width: '20%' }}>
                                 <h6 style={{ color: 'blue' }}>
                                     <img onClick={() => handleButtonClick('consumerDetails')}
                                         src="https://img.icons8.com/3d-fluency/94/group--v4.png"
@@ -1932,200 +1983,181 @@ const Test = () => {
                                 </h6>
 
                                 {/* <button className="btn btn-outline-primary" style={{ height: '7%', width: '80%', marginTop: '-4px', }} onClick={() => handleButtonClick('addConsumer')}>Add Details </button> */}
-                                        {/* 
+                                    {/* 
                                 <hr></hr> */}
-                                        {/* <p>Modify/ Consumer Detials </p> */}
-                                        {/* 
+                                    {/* <p>Modify/ Consumer Detials </p> */}
+                                    {/* 
                             </div> */}
 
-                                        <div className='sidebar' style={{ width: '20%' }} >
+                                    <div className='sidebar' style={{ width: '20%' }} >
 
-                                            <h6 style={{ color: 'blue' }}>
-                                                <img onClick={() => handleButtonClick('consumerDetails')}
-                                                    className='Image'
-                                                    src="https://img.icons8.com/3d-fluency/94/group--v4.png"
-                                                    style={{ width: '90px', height: '90px', cursor: 'pointer' }}
-                                                    alt="User Group Icon"
-                                                />
+                                        <h6 style={{ color: 'blue' }}>
+                                            <img onClick={() => handleButtonClick('consumerDetails')}
+                                                className='Image'
+                                                src="https://img.icons8.com/3d-fluency/94/group--v4.png"
+                                                style={{ width: '90px', height: '90px', cursor: 'pointer' }}
+                                                alt="User Group Icon"
+                                            />
 
-                                                <hr style={{ marginTop: '-4px' }}></hr>
+                                            <hr style={{ marginTop: '-4px' }}></hr>
 
-                                            </h6>
+                                        </h6>
 
 
-                                            <div>
+                                        <div>
 
-                                                {groupNames.some(({ name }) => !name) && (
+                                            {groupNames.some(({ name }) => !name) && (
 
-                                                    <h5>Select group</h5>
+                                                <h5>Select group</h5>
 
-                                                )}
+                                            )}
 
-                                            </div>
+                                        </div>
 
-                                            <div>
-                                                {groupNames.map((groupName, index) => (
-                                                    <p key={index} onClick={() => handleGroupNameClick(groupName)} style={{ cursor: 'pointer' }}>
-                                                        <img
-                                                            src="https://img.icons8.com/fluency/100/user-group-man-woman.png"
-                                                            style={{ width: '50px', height: '50px', marginRight: '20px' }}
-                                                            alt="User Group Icon"
-                                                        />
-                                                        {groupName.replace(/_/g, ' ')}
-                                                    </p>
-                                                ))}
-                                            </div>
+                                        <div>
+                                            {groupNames.map((groupName, index) => (
+                                                <p key={index} onClick={() => handleGroupNameClick(groupName)} style={{ cursor: 'pointer' }}>
+                                                    <img
+                                                        src="https://img.icons8.com/fluency/100/user-group-man-woman.png"
+                                                        style={{ width: '50px', height: '50px', marginRight: '20px' }}
+                                                        alt="User Group Icon"
+                                                    />
+                                                    {groupName.replace(/_/g, ' ')}
+                                                </p>
+                                            ))}
                                         </div>
                                     </div>
+                                </div>
 
-                                    {selectedGroupName && (
-                                        <div className='container ' style={{ marginLeft: '20%', marginTop: "6%" }}>
-                                            <div className=' groupname'>
-                                                <div >
-
-                                                    <div className='group-icon' >
-                                                        <div style={{ display: 'flex', padding: '2%' }}>
-                                                            <img
-                                                                src="https://img.icons8.com/fluency/48/add-user-male.png"
-                                                                alt="Icon"
-                                                                style={{ width: '25px', height: '25px', marginLeft: '4%', }}
-                                                            />
-                                                            <p style={{ marginLeft: '3%', marginTop: '1px', }}>{selectedGroupName.replace(/_/g, ' ')}</p>
-
-                                                        </div>
-                                                    </div>
-                                                    <div  >
-                                                        <div style={{ display: 'flex', marginLeft: '3%', marginTop: '10px', width: '70%' }}>
-
-                                                            <div>
-
-                                                                <label>Group Name </label>
-                                                                <br>
-                                                                </br>
-
-
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="Group Name"
-                                                                    className='input-field underline-input  w-auto'
-                                                                    value={groupName.replace(/_/g, ' ')}
-                                                                    onChange={handleGroupNameChange}
-                                                                    disabled={loading}
-                                                                // Make this field read-only if you only want to display group name
-
-                                                                />
-
-                                                                <br></br>
-
-                                                                {EnterGroupnameError && <span style={{ color: 'red' }}>{EnterGroupnameError}</span>}
-
-                                                            </div>
-
-                                                            <div>
-                                                                <label>Tariff Rate (₹) </label>
-
-                                                                <br>
-                                                                </br>
-                                                                <div>
-                                                                    <input
-                                                                        type="text"
-                                                                        placeholder="Tariff"
-                                                                        className='input-field underline-input w-auto'
-                                                                        value={tariff} // Display the tariff here
-                                                                        onChange={handleTariffChange} // Add onChange if you want to allow changes
-                                                                        disabled={loading}
-                                                                    />
-
-                                                                    <br></br>
-                                                                    <span style={{ fontSize: '10px' }} >Min. Limi 1.00, Max 99.99, Upto 2 deciaml places for paise</span>
-
-                                                                    <br></br>
-                                                                    {EnterTariffError && <span style={{ color: 'red' }}>{EnterTariffError}</span>}
-
-
-                                                                </div>
-                                                            </div>
-
-
-                                                            <div>
-
-                                                                <button className="btn btn-primary" onClick={handleUpdate}>UPDATE</button>
-                                                                <button className="btn btn-danger" style={{ marginLeft: '10px' }} onClick={handleDeleteGroupname} >Delete</button>
-
-                                                            </div>
-
-                                                        </div>
-                                                    </div>
-
-                                                </div>
-
-
-
-                                            </div>
-
-                                            {/* Serial numbers and names */}
+                                {selectedGroupName && (
+                                    <div className='container ' style={{ marginLeft: '20%', marginTop: "6%" }}>
+                                        <div className=' groupname'>
                                             <div >
 
+                                                <div className='group-icon' >
+                                                    <div style={{ display: 'flex', padding: '2%' }}>
+                                                        <img
+                                                            src="https://img.icons8.com/fluency/48/add-user-male.png"
+                                                            alt="Icon"
+                                                            style={{ width: '25px', height: '25px', marginLeft: '4%', }}
+                                                        />
+                                                        <p style={{ marginLeft: '3%', marginTop: '1px', }}>{selectedGroupName.replace(/_/g, ' ')}</p>
 
-                                                <ul className="list-unstyled" style={{ padding: 0, marginTop: '3%', pointer: 'cursor' }}>
+                                                    </div>
+                                                </div>
+                                                <div  >
+                                                    <div style={{ display: 'flex', marginLeft: '3%', marginTop: '10px', width: '70%' }}>
 
-                                                    <div className="rowContainer1">
-                                                        {Object.entries(serialNumbersAndNames)
-                                                            .filter(([serialNumber]) => serialNumber !== 'tariff') // Filter out 'tariff'
-                                                            .map(([serialNumber, data]) => (
-                                                                <>
-                                                                    <div
-                                                                        className='customBox1' style={{ position: 'relative' }}
-                                                                        key={serialNumber}>
-                                                                        <div >
-                                                                            <div>
-                                                                                <p>{serialNumber} <span style={{ color: 'red' }}>{tokenStatus[serialNumber]} </span> </p>
-                                                                                <p>{data.name}</p>
-                                                                            </div>
-                                                                            <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
-                                                                                <img
-                                                                                    onClick={() => {
-                                                                                        handleSerialNumberClick(serialNumber, data);
+                                                        <div>
 
-                                                                                    }}
-                                                                                    src="https://img.icons8.com/ios-glyphs/30/edit--v1.png"
-                                                                                    alt="Edit Icon"
-                                                                                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                                                                                />
-                                                                            </div>
+                                                            <label>Group Name </label>
+                                                            <br>
+                                                            </br>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Group Name"
+                                                                className='input-field underline-input  w-auto'
+                                                                value={groupName.replace(/_/g, ' ')}
+                                                                onChange={handleGroupNameChange}
+                                                                disabled={loading}
+                                                            // Make this field read-only if you only want to display group name
+
+                                                            />
+                                                            <br></br>
+                                                            {EnterGroupnameError && <span style={{ color: 'red' }}>{EnterGroupnameError}</span>}
+                                                        </div>
+                                                        <div>
+                                                            <label>Tariff Rate (₹) </label>
+                                                            <br>
+                                                            </br>
+                                                            <div>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Tariff"
+                                                                    className='input-field underline-input w-auto'
+                                                                    value={tariff} // Display the tariff here
+                                                                    onChange={handleTariffChange} // Add onChange if you want to allow changes
+                                                                    disabled={loading}
+                                                                />
+                                                                <br></br>
+                                                                <span style={{ fontSize: '10px' }} >Min. Limi 1.00, Max 99.99, Upto 2 deciaml places for paise</span>
+                                                                <br></br>
+                                                                {EnterTariffError && <span style={{ color: 'red' }}>{EnterTariffError}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <button className="btn btn-primary" onClick={handleUpdate}>UPDATE</button>
+                                                            <button className="btn btn-danger" style={{ marginLeft: '10px' }} onClick={handleDeleteGroupname} >Delete</button>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Serial numbers and names */}
+                                        <div >
+
+
+                                            <ul className="list-unstyled" style={{ padding: 0, marginTop: '3%', pointer: 'cursor' }}>
+
+                                                <div className="rowContainer1">
+                                                    {Object.entries(serialNumbersAndNames)
+                                                        .filter(([serialNumber]) => serialNumber !== 'tariff') // Filter out 'tariff'
+                                                        .map(([serialNumber, data]) => (
+                                                            <>
+                                                                <div
+                                                                    className='customBox1' style={{ position: 'relative' }}
+                                                                    key={serialNumber}>
+                                                                    <div >
+                                                                        <div>
+                                                                            <p>{serialNumber} <span style={{ color: 'red' }}>{tokenStatus[serialNumber]} </span> </p>
+                                                                            <p>{data.name}</p>
+                                                                        </div>
+                                                                        <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
+                                                                            <img
+                                                                                onClick={() => {
+                                                                                    handleSerialNumberClick(serialNumber, data);
+
+                                                                                }}
+                                                                                src="https://img.icons8.com/ios-glyphs/30/edit--v1.png"
+                                                                                alt="Edit Icon"
+                                                                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                                                            />
                                                                         </div>
                                                                     </div>
-                                                                    <div style={loadingStyle}>
-                                                                        <Modal show={modalIsOpen}   disabled={loading} onHide={handleClosed} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
-                                                                            <Modal.Header closeButton>
-                                                                                <Modal.Title>Edit Details</Modal.Title>
-                                                                            </Modal.Header>
-                                                                            <Modal.Body>
+                                                                </div>
+                                                                <div style={loadingStyle}>
+                                                                    <Modal show={modalIsOpen} disabled={loading} onHide={handleClosed} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
+                                                                        <Modal.Header closeButton>
+                                                                            <Modal.Title>Edit Details</Modal.Title>
+                                                                        </Modal.Header>
+                                                                        <Modal.Body>
 
-                                                                                <div >
-                                                                                    <div style={{ display: 'flex' }}>
-                                                                                        {clickedDataArray.map((clickedItem, index) => (
-                                                                                            <div key={index} style={{ display: 'flex' }}>
-                                                                                                {clickedItem.serialNumber === serialNumber && (
+                                                                            <div >
+                                                                                <div style={{ display: 'flex' }}>
+                                                                                    {clickedDataArray.map((clickedItem, index) => (
+                                                                                        <div key={index} style={{ display: 'flex' }}>
+                                                                                            {clickedItem.serialNumber === serialNumber && (
 
-                                                                                                    <div>
-                                                                                                        <div className='row '>
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label for="disabledTextInput" class="form-label"> Meter Serial Number </label>
-                                                                                                                <input
-                                                                                                                    type="text1"
-                                                                                                                    name="serailnumber"
-                                                                                                                    className='form-control'
-                                                                                                                    id="serial"
-                                                                                                                    value={serialNumber}
-                                                                                                                    readOnly={editedSerialNumber !== clickedItem.serialNumber}
-                                                                                                                    onChange={(event) => handleInputChange(index, 'serialNumber', event)}
+                                                                                                <div>
+                                                                                                    <div className='row '>
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label for="disabledTextInput" class="form-label"> Meter Serial Number </label>
+                                                                                                            <input
+                                                                                                                type="text1"
+                                                                                                                name="serailnumber"
+                                                                                                                className='form-control'
+                                                                                                                id="serial"
+                                                                                                                value={serialNumber}
+                                                                                                                readOnly={editedSerialNumber !== clickedItem.serialNumber}
+                                                                                                                onChange={(event) => handleInputChange(index, 'serialNumber', event)}
 
-                                                                                                                    disabled
-                                                                                                                />
+                                                                                                                disabled
+                                                                                                            />
 
-                                                                                                            </div>
-                                                                                                            {/* <div className="col-md-6">
+                                                                                                        </div>
+                                                                                                        {/* <div className="col-md-6">
 
                                                                                                 <label class="form-label">Create/Select Group </label>
 
@@ -2141,305 +2173,305 @@ const Test = () => {
 
 
                                                                                             </div> */}
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label className="form-label">Create/ Select group </label>
-                                                                                                                <div className="position-relative" onClick={() => {
-                                                                                                                    setShowInputs(!showInputs); // Toggle inputs on icon click
-                                                                                                                }}>
-                                                                                                                    <input
-                                                                                                                        type="text"
-                                                                                                                        className="form-control w-100" // Added Bootstrap class to set width to 100%
-                                                                                                                        placeholder="Select an option"
-                                                                                                                        disabled={loading}
-                                                                                                                        style={{ width: '100%', paddingRight: '30px' }} // Adjusted width for responsiveness
-                                                                                                                        value={getInputValue()} // Call the function to determine input value
-                                                                                                                        onChange={handleSelectChange}
-                                                                                                                    />
-                                                                                                                    <span
-                                                                                                                        className="position-absolute top-50 end-0 translate-middle-y"
-                                                                                                                        style={{ cursor: 'pointer' }}
-                                                                                                                        onClick={() => {
-                                                                                                                            setShowInputs(!showInputs); // Toggle inputs on icon click
-                                                                                                                        }}
-                                                                                                                    >
-                                                                                                                        &#9660; {/* Unicode for down arrow */}
-                                                                                                                    </span>
-                                                                                                                </div>
-
-                                                                                                                {showInputs ? (
-                                                                                                                    <div className="inputs-container" style={{ position: 'absolute', left: '28%', backgroundColor: '#fff', zIndex: '333' }}>
-                                                                                                                        <div>
-                                                                                                                            <div class="col-md-6 mb-3 text-start">
-                                                                                                                                <label class="form-label" >Group Name</label>
-                                                                                                                                <input
-                                                                                                                                    type="text"
-                                                                                                                                    placeholder="Group Name "
-                                                                                                                                    className="input-field"
-                                                                                                                                    name="input1"
-                                                                                                                                    value={inputValues.input1}
-                                                                                                                                    onChange={handleInputChange1}
-
-                                                                                                                                />
-                                                                                                                                {groupNameError && <p style={{ color: 'red', fontSize: '10px' }}>{groupNameError}</p>}
-                                                                                                                            </div>
-                                                                                                                            <div class="col-md-6 mb-3">
-                                                                                                                                <label class="form-label ">Tariff Rate </label>
-                                                                                                                                <input
-                                                                                                                                    type="text"
-                                                                                                                                    placeholder="Tariff Rate"
-                                                                                                                                    className="input-field"
-                                                                                                                                    name="input2"
-                                                                                                                                    value={inputValues.input2}
-
-
-                                                                                                                                    onChange={handleInputChange1}
-                                                                                                                                />
-                                                                                                                                <p style={{ color: '#000000', fontSize: '10px', margin: '0', padding: "0", width: '140%' }}>Min. Limi 1.00, Max 99.99, Upto 2 deciaml places for paise</p>
-                                                                                                                                {tariffRateError && <p style={{ color: 'red' }}>{tariffRateError}</p>}
-                                                                                                                            </div>
-
-                                                                                                                        </div>
-
-                                                                                                                        <div className='btton' style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                                                                                            <button className="custom-button" onClick={handleAddClick}>
-                                                                                                                                Add
-                                                                                                                            </button>
-                                                                                                                            <button className="custom-button" onClick={handleCloseClick}>
-                                                                                                                                Close
-                                                                                                                            </button>
-                                                                                                                        </div>
-                                                                                                                        <div>
-                                                                                                                            <hr style={{ width: '100%', border: '1.5px solid red' }} />
-                                                                                                                            <p>Select Exsting Group </p>
-
-                                                                                                                            <div style={{ maxHeight: '300px', overflowY: 'auto' }}> {/* Add a scroll bar for overflow */}
-                                                                                                                                {
-                                                                                                                                    // existingGroups.map((group, index) => {
-                                                                                                                                    //     // Filter out 'time' from group names
-                                                                                                                                    //     //    console.log("my group name data ", group);
-                                                                                                                                    //     if (group.includes('time')) {
-                                                                                                                                    //         return null; // Skip displaying if the group contains 'time'
-                                                                                                                                    //     }
-
-                                                                                                                                    //     // console.log('my group name', group);
-                                                                                                                                    //    // const groupData = data[group.replace(/ /g, '_')];
-                                                                                                                                    //     // Calculate meters count for the current group
-                                                                                                                                    //     // const groupData = data[group.replace(/ /g, '_')]; // Assuming your data structure contains group-related data
-                                                                                                                                    //  // console.log("check group data :", groupData);
-                                                                                                                                    //     const metersCount = calculateMetersCount(group); // Replace this with your logic to count meters for the group
-
-                                                                                                                                    existingGroups.map((group, index) => {
-                                                                                                                                        // Filter out 'time' from group names
-                                                                                                                                        //  console.log("ratan ", group);
-                                                                                                                                        if (group.includes('time')) {
-                                                                                                                                            return null; // Skip displaying if the group contains 'time'
-                                                                                                                                        }
-                                                                                                                                        // Calculate meters count for the current group
-                                                                                                                                        const groupData = data[group.replace(/ /g, '_')]; // Assuming your data structure contains group-related data
-
-                                                                                                                                        //  console.log("my group name data ", groupData);
-                                                                                                                                        const metersCount = calculateMetersCount(group); // Replace this with your logic to count meters for the group
-
-
-
-                                                                                                                                        return (
-                                                                                                                                            <React.Fragment key={index}>
-                                                                                                                                                <div style={{ display: 'flex', alignItems: 'center', width: '250px' }}>
-                                                                                                                                                    <img
-                                                                                                                                                        src="https://img.icons8.com/fluency/100/user-group-man-woman.png"
-                                                                                                                                                        alt={`${group} icon`}
-                                                                                                                                                        style={{ width: '50px', height: '50px', marginRight: '20px' }}
-                                                                                                                                                    />
-                                                                                                                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                                                                                                        <p style={{ margin: '1px' }} onClick={() => handleGroupClick(group)}>
-                                                                                                                                                            {group}
-                                                                                                                                                        </p>
-                                                                                                                                                        <p>No of Consumers: {metersCount}</p>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
-                                                                                                                                                {(index % 2 === 1) && (index !== existingGroups.length - 1) && (
-                                                                                                                                                    <hr style={{ width: '100%', margin: '5px 0' }} />
-                                                                                                                                                )}
-                                                                                                                                            </React.Fragment>
-                                                                                                                                        );
-                                                                                                                                    })
-                                                                                                                                }
-                                                                                                                            </div>
-                                                                                                                            <div>
-
-                                                                                                                            </div>
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                ) : null}
-                                                                                                            </div>
-
-
-
-                                                                                                        </div>
-
-
-
-                                                                                                        <div className='row g-3'>
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label class="form-label">Meter Location  </label>
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label className="form-label">Create/ Select group </label>
+                                                                                                            <div className="position-relative" onClick={() => {
+                                                                                                                setShowInputs(!showInputs); // Toggle inputs on icon click
+                                                                                                            }}>
                                                                                                                 <input
                                                                                                                     type="text"
-                                                                                                                    name="serailnumber"
-                                                                                                                    className='form-control'
-                                                                                                                    id='location'
-                                                                                                                    value={clickedItem.data.location}
-                                                                                                                    readOnly={editedSerialNumber !== clickedItem.serialNumber}
-                                                                                                                    onChange={(event) => handleInputChange(index, 'location', event)}
-                                                                                                                    maxLength={40}
+                                                                                                                    className="form-control w-100" // Added Bootstrap class to set width to 100%
+                                                                                                                    placeholder="Select an option"
                                                                                                                     disabled={loading}
+                                                                                                                    style={{ width: '100%', paddingRight: '30px' }} // Adjusted width for responsiveness
+                                                                                                                    value={getInputValue()} // Call the function to determine input value
+                                                                                                                    onChange={handleSelectChange}
                                                                                                                 />
-                                                                                                                <span style={{ color: 'red' }}>  {errors.location && <p className="error-message">{errors.location}</p>} </span>
+                                                                                                                <span
+                                                                                                                    className="position-absolute top-50 end-0 translate-middle-y"
+                                                                                                                    style={{ cursor: 'pointer' }}
+                                                                                                                    onClick={() => {
+                                                                                                                        setShowInputs(!showInputs); // Toggle inputs on icon click
+                                                                                                                    }}
+                                                                                                                >
+                                                                                                                    &#9660; {/* Unicode for down arrow */}
+                                                                                                                </span>
                                                                                                             </div>
 
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label class="form-label">Tariff Rate  </label>
-                                                                                                                <input
-                                                                                                                    type="text"
-                                                                                                                    name="tariff"
-                                                                                                                    id='tariff'
-                                                                                                                    className='form-control'
-                                                                                                                    // value={displayedInput2}
-                                                                                                                    value={displayedInput2 || tariff}
-                                                                                                                    readOnly
-                                                                                                                    disabled={loading}
-                                                                                                                />
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div className='row g-3'>
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label for="validationDefaultUsername" className="form-label">Consumer Name </label>
-                                                                                                                <input
-                                                                                                                    type="text"
-                                                                                                                    //  id='name'
-                                                                                                                    className='form-control'
-                                                                                                                    id="validationDefaultUsername"
-                                                                                                                    aria-describedby="inputGroupPrepend2" required
-                                                                                                                    value={clickedItem.data.name}
-                                                                                                                    readOnly={editedSerialNumber !== clickedItem.serialNumber}
-                                                                                                                    onChange={(event) => handleInputChange(index, 'name', event)}
-                                                                                                                    maxLength={20}
-                                                                                                                    disabled={loading}
-                                                                                                                />
-                                                                                                                <span style={{ color: 'red' }}>  {errors.name && <p className="error-message">{errors.name}</p>} </span>
-                                                                                                            </div>
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label class="form-label">Consumer Mobile Number </label>
-                                                                                                                <input
-                                                                                                                    type="text"
-                                                                                                                    name="phone"
-                                                                                                                    id='phone'
-                                                                                                                    className='form-control'
-                                                                                                                    value={clickedItem.data.phone}
-                                                                                                                    readOnly={editedSerialNumber !== clickedItem.serialNumber}
-                                                                                                                    onChange={(event) => handleInputChange(index, 'phone', event)}
-                                                                                                                    maxLength={10}
-                                                                                                                    disabled={loading}
-                                                                                                                />
-                                                                                                                <span style={{ color: 'red' }}>  {errors.phone && <p className="error-message">{errors.phone}</p>} </span>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div className='row g-3'>
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label class="form-label">E-mail Address (Optional )</label>
-                                                                                                                <input
-                                                                                                                    type="text"
-                                                                                                                    name="email"
-                                                                                                                    id=''
-                                                                                                                    className='form-control'
-                                                                                                                    value={clickedItem.data.email === 'na' ? '' : clickedItem.data.email}
-                                                                                                                    readOnly={editedSerialNumber !== clickedItem.serialNumber}
-                                                                                                                    onChange={(event) => handleInputChange(index, 'email', event)}
-                                                                                                                    maxLength={40}
-                                                                                                                    disabled={loading}
+                                                                                                            {showInputs ? (
+                                                                                                                <div className="inputs-container" style={{ position: 'absolute', left: '28%', backgroundColor: '#fff', zIndex: '333' }}>
+                                                                                                                    <div>
+                                                                                                                        <div class="col-md-6 mb-3 text-start">
+                                                                                                                            <label class="form-label" >Group Name</label>
+                                                                                                                            <input
+                                                                                                                                type="text"
+                                                                                                                                placeholder="Group Name "
+                                                                                                                                className="input-field"
+                                                                                                                                name="input1"
+                                                                                                                                value={inputValues.input1}
+                                                                                                                                onChange={handleInputChange1}
 
-                                                                                                                />
-                                                                                                                <span style={{ color: 'red' }}>  {errors.email && <p className="error-message">{errors.email}</p>} </span>
-                                                                                                            </div>
-                                                                                                            <div className="col-md-6">
-                                                                                                                <label class="form-label">Date Of Occupancy</label>
-
-                                                                                                                <div>
-                                                                                                                    <input
-                                                                                                                        type="text"
-                                                                                                                        className="form-control"
-                                                                                                                        id={`doo-${clickedItem.serialNumber}`}
-                                                                                                                        placeholder="Date of Occupancy"
-                                                                                                                        onClick={() => handleToggleDatePicker(clickedItem.serialNumber)}
-                                                                                                                        value={clickedItem.data.doo}
-                                                                                                                        readOnly={editedSerialNumber !== clickedItem.serialNumber}
-                                                                                                                        onChange={(event) => handleInputChange(index, 'doo', event)}
-                                                                                                                        disabled={loading}
-                                                                                                                    />
-
-                                                                                                                    <div className='  date-picker-wrapper'>
-
-                                                                                                                        {showDatePickers[clickedItem.serialNumber] && editModeSerialNumber === clickedItem.serialNumber && (
-
-                                                                                                                            <DatePicker
-
-                                                                                                                                closeOnScroll={true}
-                                                                                                                                showIcon
-                                                                                                                                selected={selectedDate}
-                                                                                                                                onChange={(date) => {
-                                                                                                                                    setSelectedDate(date);
-                                                                                                                                    handleToggleDatePicker(clickedItem.serialNumber);
-                                                                                                                                    handleInputChange(index, 'doo', { target: { value: formatDate(date) } });
-                                                                                                                                }}
-                                                                                                                                inline
-
-                                                                                                                                icon="fa fa-calendar"
-                                                                                                                                dateFormat="dd/MM/yy"
-                                                                                                                                showYearDropdown
-                                                                                                                                showMonthDropdown
-                                                                                                                                popperPlacement="top"
                                                                                                                             />
-                                                                                                                        )}
+                                                                                                                            {groupNameError && <p style={{ color: 'red', fontSize: '10px' }}>{groupNameError}</p>}
+                                                                                                                        </div>
+                                                                                                                        <div class="col-md-6 mb-3">
+                                                                                                                            <label class="form-label ">Tariff Rate </label>
+                                                                                                                            <input
+                                                                                                                                type="text"
+                                                                                                                                placeholder="Tariff Rate"
+                                                                                                                                className="input-field"
+                                                                                                                                name="input2"
+                                                                                                                                value={inputValues.input2}
+
+
+                                                                                                                                onChange={handleInputChange1}
+                                                                                                                            />
+                                                                                                                            <p style={{ color: '#000000', fontSize: '10px', margin: '0', padding: "0", width: '140%' }}>Min. Limi 1.00, Max 99.99, Upto 2 deciaml places for paise</p>
+                                                                                                                            {tariffRateError && <p style={{ color: 'red' }}>{tariffRateError}</p>}
+                                                                                                                        </div>
+
+                                                                                                                    </div>
+
+                                                                                                                    <div className='btton' style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                                                                                        <button className="custom-button" onClick={handleAddClick}>
+                                                                                                                            Add
+                                                                                                                        </button>
+                                                                                                                        <button className="custom-button" onClick={handleCloseClick}>
+                                                                                                                            Close
+                                                                                                                        </button>
+                                                                                                                    </div>
+                                                                                                                    <div>
+                                                                                                                        <hr style={{ width: '100%', border: '1.5px solid red' }} />
+                                                                                                                        <p>Select Exsting Group </p>
+
+                                                                                                                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}> {/* Add a scroll bar for overflow */}
+                                                                                                                            {
+                                                                                                                                // existingGroups.map((group, index) => {
+                                                                                                                                //     // Filter out 'time' from group names
+                                                                                                                                //     //    console.log("my group name data ", group);
+                                                                                                                                //     if (group.includes('time')) {
+                                                                                                                                //         return null; // Skip displaying if the group contains 'time'
+                                                                                                                                //     }
+
+                                                                                                                                //     // console.log('my group name', group);
+                                                                                                                                //    // const groupData = data[group.replace(/ /g, '_')];
+                                                                                                                                //     // Calculate meters count for the current group
+                                                                                                                                //     // const groupData = data[group.replace(/ /g, '_')]; // Assuming your data structure contains group-related data
+                                                                                                                                //  // console.log("check group data :", groupData);
+                                                                                                                                //     const metersCount = calculateMetersCount(group); // Replace this with your logic to count meters for the group
+
+                                                                                                                                existingGroups.map((group, index) => {
+                                                                                                                                    // Filter out 'time' from group names
+                                                                                                                                    //  console.log("ratan ", group);
+                                                                                                                                    if (group.includes('time')) {
+                                                                                                                                        return null; // Skip displaying if the group contains 'time'
+                                                                                                                                    }
+                                                                                                                                    // Calculate meters count for the current group
+                                                                                                                                    const groupData = data[group.replace(/ /g, '_')]; // Assuming your data structure contains group-related data
+
+                                                                                                                                    //  console.log("my group name data ", groupData);
+                                                                                                                                    const metersCount = calculateMetersCount(group); // Replace this with your logic to count meters for the group
+
+
+
+                                                                                                                                    return (
+                                                                                                                                        <React.Fragment key={index}>
+                                                                                                                                            <div style={{ display: 'flex', alignItems: 'center', width: '250px' }}>
+                                                                                                                                                <img
+                                                                                                                                                    src="https://img.icons8.com/fluency/100/user-group-man-woman.png"
+                                                                                                                                                    alt={`${group} icon`}
+                                                                                                                                                    style={{ width: '50px', height: '50px', marginRight: '20px' }}
+                                                                                                                                                />
+                                                                                                                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                                                                                                    <p style={{ margin: '1px' }} onClick={() => handleGroupClick(group)}>
+                                                                                                                                                        {group}
+                                                                                                                                                    </p>
+                                                                                                                                                    <p>No of Consumers: {metersCount}</p>
+                                                                                                                                                </div>
+                                                                                                                                            </div>
+                                                                                                                                            {(index % 2 === 1) && (index !== existingGroups.length - 1) && (
+                                                                                                                                                <hr style={{ width: '100%', margin: '5px 0' }} />
+                                                                                                                                            )}
+                                                                                                                                        </React.Fragment>
+                                                                                                                                    );
+                                                                                                                                })
+                                                                                                                            }
+                                                                                                                        </div>
+                                                                                                                        <div>
+
+                                                                                                                        </div>
                                                                                                                     </div>
                                                                                                                 </div>
-                                                                                                            </div>
+                                                                                                            ) : null}
                                                                                                         </div>
 
 
-                                                                                                        <Modal.Footer>
-                                                                                                            <div className="d-flex justify-content-center w-100">
-                                                                                                                {/* <button className="btn btn-primary" onClick={() => handleEditButtonClick(clickedItem.serialNumber)}> Edit </button> */}
 
-                                                                                                                <button className="btn btn-primary" onClick={handleUpdateButtonClick} style={{ marginRight: '20px' }} > SAVE  </button>
-
-                                                                                                                <button className="btn btn-danger" onClick={() => handleDeletebutton(clickedItem.serialNumber)}> Delete</button>
-                                                                                                            </div>
-                                                                                                        </Modal.Footer>
                                                                                                     </div>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        ))}
-                                                                                    </div>
+
+
+
+                                                                                                    <div className='row g-3'>
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label class="form-label">Meter Location  </label>
+                                                                                                            <input
+                                                                                                                type="text"
+                                                                                                                name="serailnumber"
+                                                                                                                className='form-control'
+                                                                                                                id='location'
+                                                                                                                value={clickedItem.data.location}
+                                                                                                                readOnly={editedSerialNumber !== clickedItem.serialNumber}
+                                                                                                                onChange={(event) => handleInputChange(index, 'location', event)}
+                                                                                                                maxLength={40}
+                                                                                                                disabled={loading}
+                                                                                                            />
+                                                                                                            <span style={{ color: 'red' }}>  {errors.location && <p className="error-message">{errors.location}</p>} </span>
+                                                                                                        </div>
+
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label class="form-label">Tariff Rate  </label>
+                                                                                                            <input
+                                                                                                                type="text"
+                                                                                                                name="tariff"
+                                                                                                                id='tariff'
+                                                                                                                className='form-control'
+                                                                                                                // value={displayedInput2}
+                                                                                                                value={displayedInput2 || tariff}
+                                                                                                                readOnly
+                                                                                                                disabled={loading}
+                                                                                                            />
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div className='row g-3'>
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label for="validationDefaultUsername" className="form-label">Consumer Name </label>
+                                                                                                            <input
+                                                                                                                type="text"
+                                                                                                                //  id='name'
+                                                                                                                className='form-control'
+                                                                                                                id="validationDefaultUsername"
+                                                                                                                aria-describedby="inputGroupPrepend2" required
+                                                                                                                value={clickedItem.data.name}
+                                                                                                                readOnly={editedSerialNumber !== clickedItem.serialNumber}
+                                                                                                                onChange={(event) => handleInputChange(index, 'name', event)}
+                                                                                                                maxLength={20}
+                                                                                                                disabled={loading}
+                                                                                                            />
+                                                                                                            <span style={{ color: 'red' }}>  {errors.name && <p className="error-message">{errors.name}</p>} </span>
+                                                                                                        </div>
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label class="form-label">Consumer Mobile Number </label>
+                                                                                                            <input
+                                                                                                                type="text"
+                                                                                                                name="phone"
+                                                                                                                id='phone'
+                                                                                                                className='form-control'
+                                                                                                                value={clickedItem.data.phone}
+                                                                                                                readOnly={editedSerialNumber !== clickedItem.serialNumber}
+                                                                                                                onChange={(event) => handleInputChange(index, 'phone', event)}
+                                                                                                                maxLength={10}
+                                                                                                                disabled={loading}
+                                                                                                            />
+                                                                                                            <span style={{ color: 'red' }}>  {errors.phone && <p className="error-message">{errors.phone}</p>} </span>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div className='row g-3'>
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label class="form-label">E-mail Address (Optional )</label>
+                                                                                                            <input
+                                                                                                                type="text"
+                                                                                                                name="email"
+                                                                                                                id=''
+                                                                                                                className='form-control'
+                                                                                                                value={clickedItem.data.email === 'na' ? '' : clickedItem.data.email}
+                                                                                                                readOnly={editedSerialNumber !== clickedItem.serialNumber}
+                                                                                                                onChange={(event) => handleInputChange(index, 'email', event)}
+                                                                                                                maxLength={40}
+                                                                                                                disabled={loading}
+
+                                                                                                            />
+                                                                                                            <span style={{ color: 'red' }}>  {errors.email && <p className="error-message">{errors.email}</p>} </span>
+                                                                                                        </div>
+                                                                                                        <div className="col-md-6">
+                                                                                                            <label class="form-label">Date Of Occupancy</label>
+
+                                                                                                            <div>
+                                                                                                                <input
+                                                                                                                    type="text"
+                                                                                                                    className="form-control"
+                                                                                                                    id={`doo-${clickedItem.serialNumber}`}
+                                                                                                                    placeholder="Date of Occupancy"
+                                                                                                                    onClick={() => handleToggleDatePicker(clickedItem.serialNumber)}
+                                                                                                                    value={clickedItem.data.doo}
+                                                                                                                    readOnly={editedSerialNumber !== clickedItem.serialNumber}
+                                                                                                                    onChange={(event) => handleInputChange(index, 'doo', event)}
+                                                                                                                    disabled={loading}
+                                                                                                                />
+
+                                                                                                                <div className='  date-picker-wrapper'>
+
+                                                                                                                    {showDatePickers[clickedItem.serialNumber] && editModeSerialNumber === clickedItem.serialNumber && (
+
+                                                                                                                        <DatePicker
+
+                                                                                                                            closeOnScroll={true}
+                                                                                                                            showIcon
+                                                                                                                            selected={selectedDate}
+                                                                                                                            onChange={(date) => {
+                                                                                                                                setSelectedDate(date);
+                                                                                                                                handleToggleDatePicker(clickedItem.serialNumber);
+                                                                                                                                handleInputChange(index, 'doo', { target: { value: formatDate(date) } });
+                                                                                                                            }}
+                                                                                                                            inline
+
+                                                                                                                            icon="fa fa-calendar"
+                                                                                                                            dateFormat="dd/MM/yy"
+                                                                                                                            showYearDropdown
+                                                                                                                            showMonthDropdown
+                                                                                                                            popperPlacement="top"
+                                                                                                                        />
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+
+
+                                                                                                    <Modal.Footer>
+                                                                                                        <div className="d-flex justify-content-center w-100">
+                                                                                                            {/* <button className="btn btn-primary" onClick={() => handleEditButtonClick(clickedItem.serialNumber)}> Edit </button> */}
+
+                                                                                                            <button className="btn btn-primary" onClick={handleUpdateButtonClick} style={{ marginRight: '20px' }} > SAVE  </button>
+
+                                                                                                            <button className="btn btn-danger" onClick={() => handleDeletebutton(clickedItem.serialNumber)}> Delete</button>
+                                                                                                        </div>
+                                                                                                    </Modal.Footer>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    ))}
                                                                                 </div>
-                                                                            </Modal.Body>
-                                                                        </Modal>
+                                                                            </div>
+                                                                        </Modal.Body>
+                                                                    </Modal>
 
-                                                                    </div>
+                                                                </div>
 
-                                                                </>
-                                                            ))}
-                                                    </div>
-                                                </ul>
-                                            </div>
+                                                            </>
+                                                        ))}
+                                                </div>
+                                            </ul>
                                         </div>
-                                    )}
-                                </div >
-                            </div>
-                        </div >
+                                    </div>
+                                )}
+                            </div >
+                        </div>
+                    </div >
 
 
 
-                    </>
-                )}
+                </>
+                {/* )} */}
 
             </div>
 
@@ -2491,6 +2523,23 @@ const Test = () => {
                 </Modal.Footer>
             </Modal>
 
+
+            <Modal show={isdeletedGroup} onHide={closedeletedGroup} backdrop="static" style={{ marginTop: '3%' }}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p> {modalMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={isConfirmedYesgroup}>
+                        YES
+                    </Button>
+
+                    <Button variant="success" onClick={closedeletedGroup}>
+                        No
+                    </Button>
+                </Modal.Footer>
+            </Modal>
 
 
         </>

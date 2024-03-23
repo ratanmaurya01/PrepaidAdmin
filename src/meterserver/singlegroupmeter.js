@@ -681,16 +681,25 @@ function Singlegroupmeter() {
         <>
 
 
-            {isLoader ? (
-                <div style={{ textAlign: 'center', marginTop: 'auto' }}>
-                    {/* <h3>Loading...</h3> */}
-                    <div class="spinner-border text-danger" role="status">
-                        <span class="sr-only"></span>
+            
+              {isLoader ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
                     </div>
                 </div>
-
-
-            ) : (
+            ) : null}
 
              
 
@@ -1101,8 +1110,6 @@ function Singlegroupmeter() {
 
                         </div>
                     </div>
-
-            )}
 
         </>
 

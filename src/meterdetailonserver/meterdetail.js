@@ -9,7 +9,9 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Modal, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import CommonFuctions from '../commonfunction'; import { ref, set, get, child, getDatabase, onValue } from 'firebase/database';
+import CommonFuctions from '../commonfunction';
+
+import { ref, set, get, child, getDatabase, onValue } from 'firebase/database';
 
 
 import { validatePhoneNumber, validateName, validateAddress, validateEmail } from '../validation/validation';
@@ -23,7 +25,7 @@ function Meterdetail() {
   const navigate = useNavigate();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [meterList, setMeterList] = useState([]);
   const [error, setError] = useState('');
   const [selectOptions, setSelectOptions] = useState([]);
@@ -80,7 +82,7 @@ function Meterdetail() {
           handlePhoneSerialList(numberPart);
           SessionValidate(numberPart);
           SessionUpdate(numberPart);
-          setLoading(false);
+          // setLoading(true);
         }
       } else {
         setUser(null);
@@ -88,7 +90,7 @@ function Meterdetail() {
       }
     });
     return () => {
-      setIsLoading(false);
+      // setIsLoading(false);
       unsubscribe(); // Cleanup function for unmounting
     };
   }, []);
@@ -122,6 +124,7 @@ function Meterdetail() {
         if (newData) {
           const options = Object.keys(newData).map(key => key.replace(/\s/g, '_'));
           setSelectOptions(options);
+          setLoading(false);
         }
         setSearchExecuted(true);
       } catch (error) {
@@ -566,22 +569,34 @@ function Meterdetail() {
 
   const closeDialog = () => {
     setIsDialogOpen(false);
+    setIsFormOpen(false);
 
+    window.location.reload(); // This will reload the page
+  };
+
+
+  const [isDialogOpen1, setIsDialogOpen1] = useState(false);
+
+  const closeDialog1 = () => {
+    setIsDialogOpen1(false);
     // window.location.reload(); // This will reload the page
   };
+
 
 
   const [isDialogOpenSavedata, setIsDialogOpenSavedata] = useState(false);
 
   const closeDialogSavedata = () => {
     setIsDialogOpenSavedata(false);
-    setIsFormOpen(false); // Close the form after submission
+
+    // Close the form after submission
     window.location.reload();
     // window.location.reload(); // This will reload the page
   };
 
 
   const [modalMessage, setModalMessage] = useState('');
+  const [modalMessage1, setModalMessage1] = useState('');
 
 
   const handleFormSubmit = async (event) => {
@@ -634,8 +649,8 @@ function Meterdetail() {
     const status = await cfunction.checkInternetConnection(); // Call the function
     //  setShowChecker(status);
     if (status === 'Poor connection.') {
-      setIsDialogOpen(true);
-      setModalMessage('No/Poor Internet connection. Cannot access server.');
+      setIsDialogOpen1(true);
+      setModalMessage1('No/Poor Internet connection. Cannot access server.');
       setLoading(false);
       /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
       return;
@@ -676,15 +691,39 @@ function Meterdetail() {
         const adminRootReference = ref(db, `adminRootReference/tenantDetails/${phoneNumber}/${groupName}/${selectedSerialNumber}`);
         const fullAdminProfilePath = adminRootReference.toString();
 
+        const tariffReference = firebase.database().ref(`/adminRootReference/tenantDetails/${phoneNumber}/${groupName}/tariff`);
+        const saveTariffReference = tariffReference.toString();
+        // await tariffReference.set(tariffRate);
+
+
+        // const dataToSend = {
+        //   [fullAdminProfilePath]: data
+        // };
+
+
+        // const saveTariffRate = {
+
+        //   [saveTariffReference]: tariffRate
+
+
+        // };
+
+
         const dataToSend = {
-          [fullAdminProfilePath]: data
-        };
+          [fullAdminProfilePath]: data,
+          [saveTariffReference]: tariffRate
+      };
+
+
 
         try {
-          cfunction.callWriteRtdbFunction(dataToSend);
 
-          const tariffReference = firebase.database().ref(`/adminRootReference/tenantDetails/${phoneNumber}/${groupName}/tariff`);
-          await tariffReference.set(tariffRate);
+          const result = await cfunction.callWriteRtdbFunction(dataToSend);
+
+          // console.log('Serial meter Save in :', result);
+        ///  const result2 = await cfunction.callWriteRtdbFunction(saveTariffRate);
+
+          // console.log('Tariif rate in groupname :', result2);
 
           setIsDialogOpenSavedata(true)
           const errorMessage = `Data saved successfully!`;
@@ -694,10 +733,11 @@ function Meterdetail() {
         }
         catch (error) {
 
-          setLoading(false);
+
           setIsDialogOpen(true);
-          const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+          const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry.(${error}) `;
           setModalMessage(errorMessage);
+          setLoading(false);
 
 
 
@@ -737,11 +777,13 @@ function Meterdetail() {
 
     } catch (error) {
 
-      setLoading(false);
+
+
       setIsDialogOpen(true);
       // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
-      const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
+      const errorMessage = `Response not recieved  from server-S. Please check if transaction completed successfully, else retry.(${error})`;
       setModalMessage(errorMessage);
+      setLoading(false);
 
     }
 
@@ -1078,12 +1120,42 @@ function Meterdetail() {
 
 
         {loading ? (
-          <div style={{ position: 'fixed', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: '9999'
+          }}>
             <div className="spinner-border text-danger" role="status">
               <span className="sr-only">Loading...</span>
             </div>
           </div>
         ) : null}
+
+        {/* {loading ? (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: '9999'
+          }}>
+            <div className="spinner-border text-danger" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        ) : null} */}
 
 
         <Modal show={isFormOpen} onHide={handleClose} backdrop="static">
@@ -1164,7 +1236,7 @@ function Meterdetail() {
                             className="input-field"
                             name="input2"
                             value={inputValues.input2}
-
+                            disabled={loading}
                             onChange={handleInputChange}
                           />
                           <p style={{ color: '#000000', fontSize: '10px', margin: '0', padding: "0", width: '140%' }}>Min. Limi 1.00, Max 99.99, Upto 2 deciaml places for paise</p>
@@ -1396,11 +1468,24 @@ function Meterdetail() {
 
       </div >
 
+
+      <Modal show={isDialogOpen1} onHide={closeDialog1} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage1}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialog1}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
       <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
         {/* <Modal.Header closeButton>
       </Modal.Header>  */}
         <Modal.Body>
-          <p> {modalMessage}</p>
+          <p style={{color:'red'}}> {modalMessage}</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={closeDialog}>

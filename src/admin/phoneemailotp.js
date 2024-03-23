@@ -5,6 +5,7 @@ import Send from '../adminLogin/sendmail'; // Import the Send component
 import PhoneSendOtp from '../adminLogin/phonesendotp';
 import CommonFuctions from '../commonfunction';
 import Navbar from '../adminLogin/navbar';
+import { Modal, Button } from 'react-bootstrap';
 
 
 
@@ -17,8 +18,10 @@ function Phoneemailotp() {
     const [phoneNumber, setPhoneNumber] = useState('');
     const location = useLocation();
     const { newPhone } = location.state || {}; // Retrieve the email value from location state
-    const { newName } = location.state || {}; 
-    const { newAddress } = location.state || {}; 
+    const { newName } = location.state || {};
+    const { newAddress } = location.state || {};
+    const [loading, setLoading] = useState(true);
+    const [modalMessage, setModalMessage] = useState('');
 
     // console.log('phone2 come are not ', newPhone);
     // console.log('new Name ', newName);
@@ -41,6 +44,7 @@ function Phoneemailotp() {
                     const number = emailParts[0]; // Get the part before '@'
                     console.log("Extracted number:", number);
                     setPhoneNumber(number);
+                    setLoading(false);
 
                 }
             } else {
@@ -54,33 +58,59 @@ function Phoneemailotp() {
         return () => unsubscribe(); // Cleanup function for unmounting
     }, []);
 
-    
-    const handleGetOTP = () => {
-        console.log('phone number 1212: ', newPhone);
-        const phoneSendOtp = new PhoneSendOtp(newPhone);
-        phoneSendOtp.sendOTP(newPhone);
+    const [alertMessage, setAlertMessage] = useState('');
+
+    const handleGetOTP = async () => {
+        //  console.log('phone number 1212: ', newPhone);
+        // const phoneSendOtp = new PhoneSendOtp(newPhone);
+        //   phoneSendOtp.sendOTP(newPhone);
+        try {
+            const phoneSendOtp = new PhoneSendOtp(newPhone);
+            const result = await phoneSendOtp.sendOTP(newPhone);
+            if (result === 411) {
+                setAlertMessage(`Invalid number : (${result})`);
+                setLoading(false);
+            } else {
+                navigate('/phoneemailverify', { state: { newName, email, newPhone, newAddress } });
+            }
+        } catch (otpError) {
+        }
 
     };
 
-    const handleButtonClick1 =async (event) => {
+    const handleButtonClick1 = async (event) => {
+
+        setLoading(true);
+        const status = await sessiontime.checkInternetConnection(); // Call the function
+        //  setShowChecker(status);
+        if (status === 'Poor connection.') {
+            setIsDialogOpen(true);
+            setModalMessage('No/Poor Internet connection , Please retry.');
+            setLoading(false);
+            // alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+            return;
+        }
+
 
         const storeSessionId = localStorage.getItem('sessionId');
+
         const { sessionId } = await sessiontime.HandleValidatSessiontime(phoneNumber);
         if (storeSessionId === sessionId) {
+            event.preventDefault();
+            handleButtonClick(event);
+            handleGetOTP();
+            // navigate('/phoneemailverify', { state: { newName, email, newPhone, newAddress } });
 
-            
+        } else {
+            // setIsSessionActive(false);
+            alert("Cannot login. Another session is active. Please retry after sometime. ");
+            // console.log('you are logg out ');
+            handleLogout();
+        }
 
-        event.preventDefault();
-        handleButtonClick(event);
-        handleGetOTP();
-        navigate('/phoneemailverify', { state: {newName, email, newPhone,newAddress } });
 
-    } else {
-        // setIsSessionActive(false);
-        alert("Cannot login. Another session is active. Please retry after sometime. ");
-        // console.log('you are logg out ');
-        handleLogout();
-      }
+
+
 
     };
 
@@ -94,17 +124,51 @@ function Phoneemailotp() {
             // Handle any errors during logout
             console.error('Error logging out:', error.message);
         })
-  
+
+    }
+
+
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const closeDialog = () => {
+        setIsDialogOpen(false);
+        window.location.reload(); // This will reload the page
+
+    };
+
+
+
+    const handleBackButton = () => {
+        navigate('/admindetail');
     }
 
 
 
     return (
         <>
-          <div>
-          <Navbar />
-          </div>
-        
+            <div>
+                <Navbar />
+            </div>
+
+            {loading ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>
+            ) : null}
+
             <div className='containers'>
                 <div className='formgroup'>
                     {/* <div>
@@ -122,6 +186,10 @@ function Phoneemailotp() {
                             disabled
                         />
                         {/* Display any response messages */}
+
+
+
+
                     </div>
 
                     <div>
@@ -135,15 +203,49 @@ function Phoneemailotp() {
                             readOnly
                             disabled
                         />
-                        {errorMessage && <p  style={{color:'red'}}  >{errorMessage}</p>}
+                        {/* {errorMessage && <p style={{ color: 'red' }}  >{errorMessage}</p>} */}
+                     
+                        {alertMessage && (
+                        <div className="alert-container">
+                            <p style={{ color: 'red' }}><i className="fas fa-exclamation-circle" style={{ color: 'red' }}></i> {alertMessage}</p>
+                        </div>
+                    )}
+                    
                     </div>
-                    <div className='d-grid col-4'>
+                  
+                    {/* <div className='d-grid col-4'>
                         <button className='btn btn-primary' onClick={handleButtonClick1} >GET OTP</button>
+                    </div> */}
+
+                    <div className="d-flex justify-content-center w-100">
+                        <button className="btn btn-danger" onClick={handleBackButton} style={{ marginRight: '50px' }}>Back</button>
+                        <button className='btn btn-primary' onClick={handleButtonClick1} >GET OTP</button>
+
                     </div>
+
                 </div>
             </div>
 
+
+
+
+            <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p> {modalMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={closeDialog}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+
         </>
+
+
     )
 }
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Mainhomepage from './mainhomepage'
 import Login from '../adminLogin/login';
 
@@ -8,13 +8,43 @@ import Meter2 from '../Images/homepage/Meter2.jpeg';
 import Profile from '../Images/homepage/Profile.png';
 import Clients from '../Images/homepage/Clients.png';
 import Footer from './footer'
+import CommonFuctions from '../commonfunction';
 
 
-function Homepagelogin() {
+
+function Homepagelogin () {
+   
+  const internet = new CommonFuctions();
+  const [isInternetAvailable, setIsInternetAvailable] = useState(true);
+
+     ///const status =  internet.checkInternetConnection(); // Call the function
+  useEffect(() => {
+   
+    const checkInternet = async () => {
+      const status = await internet.checkInternetConnection();
+      setIsInternetAvailable(status);
+    };
+
+    checkInternet();
+
+    // Cleanup function (optional)
+    return () => {
+      // Perform cleanup if needed
+    };
+  }, []); // Empty dependency array to run effect only once on mount
+
+ 
+
+
   return (
     <>
       <div>
         <Mainhomepage />
+      </div>
+  
+
+<div>
+      
       </div>
 
 
@@ -26,7 +56,7 @@ function Homepagelogin() {
         />
 
       </div>
-    
+
       <div>
         <img
           style={{ width: '100%' }}

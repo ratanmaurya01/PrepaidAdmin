@@ -13,7 +13,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 
 
-
 import Send from './sendmail';
 function Signin() {
     const navigate = useNavigate();
@@ -24,6 +23,10 @@ function Signin() {
     const [passwordError, setPasswordError] = useState('');
     const { email, setEmail, errorMessage, handleButtonClick, } = Send();
     const [showPassword, setShowPassword] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+
+    const [loading, setLoading] = useState(false);
+
 
 
 
@@ -50,6 +53,7 @@ function Signin() {
             setPhoneNumber(value);
         }
     };
+    
 
     const handlePasswordChange = (input) => {
         setPasswordError('')
@@ -63,17 +67,31 @@ function Signin() {
     };
 
 
-    const onSendButtonClick = () => {
-        // console.log('nextphone ',phoneNumber);
-        const phoneSendOtp = new PhoneSendOtp(phoneNumber);
+    const onSendButtonClick = async () => {
+        // // console.log('nextphone ',phoneNumber);
+        // const phoneSendOtp = new PhoneSendOtp(phoneNumber);
 
-        const result = phoneSendOtp.sendOTP(phoneNumber);
+        // const result = phoneSendOtp.sendOTP(phoneNumber);
+
+        try {
+            const phoneSendOtp = new PhoneSendOtp(phoneNumber);
+            const result = await phoneSendOtp.sendOTP(phoneNumber);
+            if (result === 411) {
+                setAlertMessage(`Invalid number : (${result})`);
+                setLoading(false);
+            } else {
+              //   console.log ('OTP send succesfully');
+                 //  setAlertMessage(`OTP send succesfully`);
+                navigate('/getotp');
+            }
+        } catch (otpError) {
+        }
+
+
+
+
+
     };
-
-  
-
-  
-
 
     const [errorMessage1, setErrorMessage] = useState('');
 
@@ -87,8 +105,6 @@ function Signin() {
             setEmail(trimmedValue);
         }
     }
-
-
 
     // const handleChangeEmail = (input) => {
 
@@ -136,9 +152,12 @@ function Signin() {
             return;
         }
 
+
+        setLoading(true);
+
         handleButtonClick(event); // Pass the event object to handleButtonClick from Send component
         onSendButtonClick(); // Call the onSendButtonClick function or other logic if needed
-        navigate('/getotp');
+        // navigate('/getotp');
 
     };
 
@@ -146,7 +165,7 @@ function Signin() {
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
-      };
+    };
 
 
 
@@ -157,6 +176,28 @@ function Signin() {
             <div>
                 <Mainhomepage />
             </div>
+
+
+
+            {loading ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>
+            ) : null}
+
             <div className='containers'>
                 <div className='formgroup'>
                     <div>
@@ -171,9 +212,10 @@ function Signin() {
                                 type="text"
                                 className='form-control'
                                 placeholder="Admin Phone Number"
-                                value={phoneNumber}
-                                onChange={(e) => handlePhoneChange(e.target.value)}
-                                maxLength={10}
+                               value={phoneNumber}
+                               onChange={(e) => handlePhoneChange(e.target.value)}
+                               maxLength={10}
+                              
                             />
 
 
@@ -194,7 +236,7 @@ function Signin() {
                                 value={email}
                                 // onChange={(e) => setEmail(e.target.value)}
                                 onChange={(e) => handleChangeEmail(e.target.value)}
-                            
+
                             />
 
 
@@ -233,9 +275,19 @@ function Signin() {
 
                             <i className="fas fa-lock password-icon"></i>
                         </div>
-                         <p  style={{ color: "black" }}> Minimum 8 characters </p>
-                        <span style={{ color: "red"}}><p className="error">{passwordError}</p></span>
+                        <p style={{ color: "black" }}> Minimum 8 characters </p>
+                        <span style={{ color: "red" }}><p className="error">{passwordError}</p></span>
+                        <div>
 
+
+                            {alertMessage && (
+                                <div className="alert-container">
+                                    <p style={{ color: 'red' }}><i className="fas fa-exclamation-circle" style={{ color: 'red' }}></i> {alertMessage}</p>
+                                </div>
+                            )}
+
+                            {/* {errorMessage && <p>{errorMessage}</p>} */}
+                        </div>
                     </div>
                     <div className='d-grid col-5'>
                         <button className='btn btn-primary' onClick={handleButtonClick1} >
@@ -246,7 +298,7 @@ function Signin() {
                 {/* </form> */}
             </div>
 
-            {errorMessage && <p>{errorMessage}</p>}
+
 
             {/* <p>{responseMessage}</p> */}
 

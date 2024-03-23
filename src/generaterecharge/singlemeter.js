@@ -20,6 +20,9 @@ import { Modal, Button } from 'react-bootstrap';
 import './generete.css'
 import Dropdown from 'react-bootstrap/Dropdown';
 import PopupDialog from '../userInterface/Modelpop';
+import { ref, set, get, child, getDatabase, onValue } from 'firebase/database';
+
+
 
 
 import {
@@ -35,6 +38,7 @@ import {
 
 
 let selectedTariff = '';
+
 function Singlemeter() {
 
     const Sessionid = new CommonFuctions();
@@ -57,6 +61,8 @@ function Singlemeter() {
     const [selectedGroupName, setSelectedGroupName] = useState('');
     // const [selectedTariff, setSelectedTariff] = useState('');
     const [selectedSerial, setSelectedSerial] = useState('');
+    const [selectedSerialDisplay, setSelectedSerialDisplay] = useState('');
+
     const [user, setUser] = useState(null); // State to hold user information
     const [tokenCount, setTokenCount] = useState('');
     const [rechargeAmount, setRechargeAmount] = useState(''); // Add state for Recharge Amount
@@ -69,33 +75,25 @@ function Singlemeter() {
     const [selectedPhone, setSelectedPhone] = useState('');
     const [password, setPassword] = useState('');
 
+    const [getRecahrge, setgetReacharge] = useState('');
+    const [tokenGenerationTime, settokenGenerationTime] = useState('');
+    const [tariffRate, settariffRate] = useState('');
+    const [tariffRateDisplay, settariffRateDisplay] = useState('');
 
 
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((authUser) => {
+        const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
             if (authUser) {
                 // User is logged in
                 setUser(authUser);
                 //  console.log("Logged in user:", authUser.email);
                 const emailParts = authUser.email.split('@');
+
+
                 if (emailParts.length === 2) {
                     const numberPart = emailParts[0];
                     setNumberPart(numberPart);
-                    //   console.log("Number part:", numberPart); // Log the extracted number part
-
-                    // const status = Sessionid.checkInternetConnection(); // Call the function
-
-                    // if (status === 'Poor connection.') {
-                    //     setIsDialogOpen2(true);
-                    //     setModalMessage('No/Poor Internet connection. Cannot access server.');
-                    //     setLoading(false);
-                    //     /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
-                    //     return;
-                    //     //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
-                    //     //  return;
-                    // }
-
                     updateSessionActiveTime(numberPart);
                     SessionValidate(numberPart);
                     handleSearch(numberPart);
@@ -103,9 +101,6 @@ function Singlemeter() {
                     tokenNumber(numberPart);
                     availableBalance(numberPart);
                     getAdminPassword(numberPart)
-
-
-                    // sendOTP(numberPart);
 
                 }
             } else {
@@ -133,6 +128,10 @@ function Singlemeter() {
 
 
     const handleSearch = async (phoneNumber) => {
+
+
+
+
 
         const trimmedPhoneNumber = phoneNumber.trim();
         if (trimmedPhoneNumber !== '') {
@@ -162,24 +161,6 @@ function Singlemeter() {
             }
         }
     };
-
-
-    // const extractSerialNumbers = () => {
-    //     const extractedSerials = Object.entries(selectedGroupData).reduce((acc, [groupName, groupData]) => {
-    //         const groupSerials = Object.entries(groupData).map(([serial, serialData]) => ({
-    //             groupName,
-    //             serial,
-    //             name: serialData.name,
-    //             tariff: serialData.tariff,
-    //             phoneNumber: serialData.phone,
-    //             email: serialData.email
-    //         }));
-    //         acc.push(...groupSerials);
-    //         return acc;
-    //     }, []);
-    //     setSerialOptions(extractedSerials);
-    // };
-
 
     const extractSerialNumbers = () => {
         const extractedSerials = Object.values(data).reduce((acc, item) => {
@@ -218,9 +199,6 @@ function Singlemeter() {
         handleSearch1(numberPart); // Pass the numberPart here
     }, [numberPart]); // Add numberPart to the dependency array
 
-
-
-
     useEffect(() => {
         // Merge two arrays when either serialOptions or meterList changes
         const merged = [...serialOptions, ...meterList.map(meterId => ({ serial: meterId, tariff: null }))];
@@ -244,13 +222,13 @@ function Singlemeter() {
     const handleSearch1 = async (numberPart) => {
 
         const status = await Sessionid.checkInternetConnection(); // Call the function
-        
+
         if (status === 'Poor connection.') {
             setIsDialogOpen2(true);
             setModalMessage('No/Poor Internet connection. Cannot access server.');
             setLoading(false);
             return;
-          
+
         }
 
         try {
@@ -280,7 +258,6 @@ function Singlemeter() {
             setError('Error fetching admin meter list. Please try again.');
         }
     };
-
 
     const availableBalance = async (selectedSerial) => {
         try {
@@ -344,12 +321,17 @@ function Singlemeter() {
 
     const formattedTokenCount =
         selectedSerial ? (tokenCount < 10 ? `0${tokenCount}` : String(tokenCount)) : '';
+
+
+
+
     // ...
 
     const [errorSerial, setErrorSerial] = useState('');
+    const [showMessage, setShowMessage] = useState('');
 
     const handleGenerateClickButton = async () => {
-        setLoading(true);
+        setTokenUrl('');
 
         //  Sessionid.updateSessionTimeActiveUser(phoneNumber);
 
@@ -364,10 +346,12 @@ function Singlemeter() {
             return;
         }
 
-        if (!selectedTariff) {
-            setTariffError('Enter Tariif Rate.');
-            return;
-        }
+        // if (!selectedTariff) {
+        //     setTariffError('Enter Tariif Rate.');
+        //     return;
+        // }
+
+        setLoading(true);
 
         const status = await Sessionid.checkInternetConnection(); // Call the function
         //  setShowChecker(status);
@@ -380,12 +364,23 @@ function Singlemeter() {
             //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
             //  return;
         }
+        //   const { within1Minut } = await token.fetchLastReachergeTime(selectedSerial);
 
-        const { within1Minut } = await token.fetchLastReachergeTime(selectedSerial);
+        const response = await token.fetchLastReachergeTime(selectedSerial);
 
+        if (!response || response.within1Minut === null) {
+           /// console.error('Error: Invalid response or within1Minut is null.');
+            // Handle the error condition here
+            setIsModalOpenModel(true);
+            setLoading(false);
+            return;
+        }
+
+        const { within1Minut } = response;
         if (within1Minut) {
             //alert(' Your Last recharge 1 .');
             setIsDialogOpen(true);
+            setLoading(false);
             return;
 
 
@@ -403,14 +398,19 @@ function Singlemeter() {
                 //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
                 //  return;
             }
+            // Set message directly when component renders
             setIsModalOpenModel(true);
+
+
             const result = Sessionid.isCheckInterNet();
             if (result) {
                 const { rechargeAmount, tokenGenerationTime, tariffRate, within24Hours } = await token.fetchLastReachergeTime(selectedSerial);
                 setLoading(false);
                 setgetReacharge(rechargeAmount);
                 settokenGenerationTime(tokenGenerationTime);
-                settariffRate(tariffRate)
+                settariffRate(tariffRate);
+                settariffRateDisplay(tariffRate);
+
                 if (within24Hours) {
                     // console.log(' Your Last recharge  24 hours.');
                 } else {
@@ -419,7 +419,7 @@ function Singlemeter() {
 
             } else {
                 //  setOnlineStatus(result);
-                alert(" No internet connection ");
+                /// alert(" No internet connection ");
             }
 
         }
@@ -444,16 +444,11 @@ function Singlemeter() {
 
         const result = Sessionid.isCheckInterNet();
         if (result) {
-
             const storeSessionId = localStorage.getItem('sessionId');
-
             try {
                 const { sessionId } = await Sessionid.HandleValidatSessiontime(phoneNumber);
                 if (storeSessionId === sessionId) {
-
-
                     // Sessionid.updateSessionTimeActiveUser(phoneNumber);
-
                     if (!rechargeAmount) {
                         setAmountError('Enter Recharge Amount.');
                     }
@@ -467,20 +462,18 @@ function Singlemeter() {
                             const fetchedMeterList = snapshot.val();
                             const isUsedValue = fetchedMeterList.isUsed;
                             if (isUsedValue === 'false') {
-
                                 await ref.child('isUsed').set('true');
-
                                 getnerateRechargeToken();
-
                                 //  console.log("Token is now used.");
                             } else {
-
                                 getnerateRechargeToken();
-
                                 //  console.log("No pending Token.");
                             }
                         } catch (error) {
-                            console.log(error);
+
+                            getnerateRechargeToken();
+
+
                         }
                     }
 
@@ -505,10 +498,6 @@ function Singlemeter() {
             //  setOnlineStatus(result);
             alert(" No internet connection ");
         }
-
-
-
-
 
     }
 
@@ -576,7 +565,6 @@ function Singlemeter() {
             const minutes = serverDate.getMinutes();
             const seconds = serverDate.getSeconds();
             const formattedTimes = `${year}-${month}-${day} ${hours}:${minutes}:${'00'}`;
-
             // console.log("Firebase Server Time:", formattedTime);
             //   console.log("Firebase Server Timessss:", formattedTimes);
 
@@ -603,147 +591,181 @@ function Singlemeter() {
     const pass = password;
 
     const getnerateRechargeToken = async () => {
-        const serverTime = await serverTimeFirebase();
-        //  console.log("my time ", serverTime);
 
-        //  console.log("timee", serverTime);
-        //  console.log("token count", tokenCount.toString());
-        //  console.log("rechargeAmount", rechargeAmount);
-        //  console.log('hhhhhh', serverTime, type, numberPart, selectedSerial, pass, rechargeAmount, selectedTariff, tokenCount, balance);
-        //  console.log("Available balance: " + balance);
-        const rechargeAmount1 = parseFloat(rechargeAmount).toFixed(2);
-        //   console.log('Recharge of the amount :', rechargeAmount1);
-        const tokenCount1 = ('0' + (parseInt(tokenCount, 10))).slice(-2);
-        //   console.log('my token Data is ' + tokenCount1);
-        const dateObj = new Date(serverTime);
-        const year = dateObj.getFullYear().toString();
-        const month = (dateObj.getMonth() + 1).toString(); // Adding 1 since months are zero-indexed
-        const day = dateObj.getDate().toString();
-        const hour = dateObj.getHours().toString().padStart(2, '0');;
-        const minute = dateObj.getMinutes().toString();
-        const typeHex = '01';
-        const srHex = parseInt(selectedSerial).toString(16).padStart(6, '0');
-        const dayHex = (parseInt(day, 10)).toString(16).padStart(2, '0');
-        // const dayHex = ('0' + (parseInt(day, 10)).toString(16)).slice(-2);
-        //console.log('dayHex', dayHex);
-        const hourHex = (parseInt(hour, 10)).toString(16).padStart(2, '0');
-        const minuteHex = (parseInt(minute, 10)).toString(16).padStart(2, '0');
-        const monthHex = (parseInt(month, 10)).toString(16).padStart(2, '0');
-        const yearHex = (parseInt(year.toString().substring(2), 10)).toString(16).padStart(2, '0');
-        const tknhex = parseInt(tokenCount.toString(), 10).toString(16).padStart(2, '0');
-        // console.log("token data hex ", tknhex);
-        const amhex = parseInt(rechargeAmount.toString(), 10).toString(16).padStart(4, '0');
-        //  console.log("Amout data hex ", amhex);
-        // Convert 'am' to a fixed decimal number with two decimal places,
-        // then convert it to hexadecimal and ensure it retains two decimal places
+        // const status = await Sessionid.checkInternetConnection(); // Call the function
+        // //  setShowChecker(status);
+        // if (status === 'Poor connection.') {
+        //     setIsDialogOpen2(true);
+        //     setModalMessage('No/Poor Internet connection. Cannot access server.');
+        //     setLoading(false);
+        //     /// alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+        //     return;
+        //     //  alert('No/Poor Internet connection , Please retry. ftech data from firebase '); // Display the "Poor connection" message in an alert
+        //     //  return;
+        // }
+        const storeSessionId = localStorage.getItem('sessionId');
+        try {
+            const { sessionId } = await Sessionid.HandleValidatSessiontime(phoneNumber);
+            if (storeSessionId === sessionId) {
+                const serverTime = await serverTimeFirebase();
+                //  console.log("my time ", serverTime);
+
+                //  console.log("timee", serverTime);
+                //  console.log("token count", tokenCount.toString());
+                //  console.log("rechargeAmount", rechargeAmount);
+                //  console.log('hhhhhh', serverTime, type, numberPart, selectedSerial, pass, rechargeAmount, selectedTariff, tokenCount, balance);
+                //  console.log("Available balance: " + balance);
+                const rechargeAmount1 = parseFloat(rechargeAmount).toFixed(2);
+                //   console.log('Recharge of the amount :', rechargeAmount1);
+                const tokenCount1 = ('0' + (parseInt(tokenCount, 10))).slice(-2);
+                //   console.log('my token Data is ' + tokenCount1);
+                const dateObj = new Date(serverTime);
+                const year = dateObj.getFullYear().toString();
+                const month = (dateObj.getMonth() + 1).toString(); // Adding 1 since months are zero-indexed
+                const day = dateObj.getDate().toString();
+                const hour = dateObj.getHours().toString().padStart(2, '0');;
+                const minute = dateObj.getMinutes().toString();
+                const typeHex = '01';
+                const srHex = parseInt(selectedSerial).toString(16).padStart(6, '0');
+                const dayHex = (parseInt(day, 10)).toString(16).padStart(2, '0');
+                // const dayHex = ('0' + (parseInt(day, 10)).toString(16)).slice(-2);
+                //console.log('dayHex', dayHex);
+                const hourHex = (parseInt(hour, 10)).toString(16).padStart(2, '0');
+                const minuteHex = (parseInt(minute, 10)).toString(16).padStart(2, '0');
+                const monthHex = (parseInt(month, 10)).toString(16).padStart(2, '0');
+                const yearHex = (parseInt(year.toString().substring(2), 10)).toString(16).padStart(2, '0');
+                const tknhex = parseInt(tokenCount.toString(), 10).toString(16).padStart(2, '0');
+                // console.log("token data hex ", tknhex);
+                const amhex = parseInt(rechargeAmount.toString(), 10).toString(16).padStart(4, '0');
+                //  console.log("Amout data hex ", amhex);
+                // Convert 'am' to a fixed decimal number with two decimal places,
+                // then convert it to hexadecimal and ensure it retains two decimal places
 
 
-        if (!selectedTariff.includes(".")) {
+                if (!selectedTariff.includes(".")) {
 
-            selectedTariff = selectedTariff + ".00";
+                    selectedTariff = selectedTariff + ".00";
+
+                }
+                const tfhex = parseInt(selectedTariff.replace(".", ""), 10).toString(16).padStart(4, '0')
+                // const tfhex = parseInt(tariffrate.replace(".", ""), 10).toString(16).padStart(4, '0');
+                // console.log("hex Tariff  ", tfhex);
+
+                const phhex = parseInt(numberPart.toString(), 10).toString(16).padStart(10, '0');
+                // console.log("typehex", typeHex, srHex, dayHex, monthHex, yearHex, hourHex, minuteHex, tknhex, amhex, tfhex, phhex);
+                const hextokenData = `${typeHex}${srHex}${dayHex}${monthHex}${yearHex}${hourHex}${minuteHex}${tknhex}${amhex}${tfhex}${phhex}`;
+                //  console.log('hexalldata ', hextokenData);
+                //  console.log('trarrie token ', tfhex);
+                const part1 = hextokenData.substring(0, 32);
+                const part2 = hextokenData.substring(32);
+                // console.log("part1", part1);
+                //  console.log("part2", part2);
+
+                const key = getKey(phhex, srHex, password);
+                //  console.log('key', key);
+                const result = encryptData(part1, key);
+
+                //  console.log("Main result", result);
+
+                const data = result + part2;
+                //  console.log('May data >', data);
+                var formatData = '5657' + '18' + '52434D5452' + data;
+                const CRC = checksum(formatData);
+                // formatData = token for recharge (reachege toke to )
+                formatData = formatData + CRC + '56'; //token is
+                //   console.log("generateFormattedData: CRC " + formatData);
+                const amount8 = parseInt(rechargeAmount.toString(), 10).toString(16).padStart(8, '0');
+                // const tfhex4 = parseInt((tf / 100.0).toString(), 10).toString(16).padStart(4, '0');
+                const tfhex4 = parseInt(selectedTariff.replace(".", ""), 10).toString(16).padStart(4, '0');
+                // const tfHexadecimal = (tf / 100.0).toString(16).replace(/\.(.*)/, (_, decimal) => '.' + parseFloat(`0.${decimal}`).toFixed(2));
+                ///  console.log("new define tarrif rate ", selectedTariff);
+                const timehex = parseInt(ltime.toString(), 10).toString(16).padStart(12, '0');
+                //   console.log("time hex vauesl", timehex);
+
+                // const timehex = parseInt((printServerTimestamp()).toString(), 10).toString(16).padStart(12, '0');
+                const totalData = `${amount8}${tfhex4}${timehex}FFFFFFFF`;
+
+                //  console.log("new totaldata ", totalData);
+                // console.log("new Server time ", ltime );
+                // console.log ('total data: ', totalData);
+                // console.log ('timestampehx : ', timehex);
+                //   console.log('Single tarrif ', tfhex4);
+                const dateObj1 = new Date(serverTime);
+                const year1 = dateObj1.getFullYear().toString().slice(-2);
+                const month1 = (dateObj1.getMonth() + 1).toString().padStart(2, '0'); // Adding 1 since months are zero-indexed
+                const day1 = dateObj1.getDate().toString().padStart(2, '0');
+                const formattedDate = `${day1}${month1}${year1}`;
+                // console.log('naw date of time ',formattedDate);
+                const minutes = minute.toString().substring(0, 1);
+                //console.log("fornatedd Time ", formattedDate)
+                const formattedTime = `${hour}${minutes}`;
+
+
+                //console.log('checktime11111111111',formattedTime);
+                const ulrData = encryptData(totalData, '6D783230313139390000000000000000');
+                //  console.log('UrlsData: ', ulrData);
+                const finalUrls = `https://dk9936.github.io/re-tok-${tokenCount1}-${selectedSerial}-${formattedDate}-${formattedTime}/${formatData}${ulrData}`;
+                // Construct the formatted date string in dd-mm-yy hh:mm:ss format
+                // console.log(formattedDate1);
+                const date = new Date(serverTime);
+
+
+                // Extract year, month, day, hours, minutes, and seconds
+                const year3 = date.getFullYear().toString().slice(-2); // Extract last 2 digits of the year
+                const month3 = ('0' + (date.getMonth() + 1)).slice(-2); // Adding leading zero if month is a single digit
+                const day3 = ('0' + date.getDate()).slice(-2); // Adding leading zero if day is a single digit
+                const hours3 = ('0' + date.getHours()).slice(-2); // Adding leading zero if hours is a single digit
+                const minutes3 = ('0' + date.getMinutes()).slice(-2); // Adding leading zero if minutes is a single digit
+                const seconds3 = ('0' + date.getSeconds()).slice(-2); // Adding leading zero if seconds is a single digit
+
+                // Construct the formatted date string in dd-mm-yy hh:mm:ss format
+                const formattedDate3 = `${day3}-${month3}-${year3}, ${hours3}:${minutes3}:${seconds3}`;
+                // eslint-disable-next-line
+                let mybalance = Number(balance).toFixed(2);
+                //  console.log('myAvailable', mybalance);
+                // eslint-disable-next-line
+
+                uploadDate(
+                    selectedSerial,
+                    tokenCount,
+                    formatData,
+                    finalUrls,
+                    formattedDate3,
+                    formatData,
+                    mybalance,
+                    rechargeAmount1,
+                    selectedTariff,);
+
+                //    console.log("finalUrls", finalUrls);
+
+                // setTokenUrl(finalUrls);
+                //   sendOTP(finalUrls);
+                //   handleSendMessage(finalUrls);
+
+                return finalUrls;
+
+
+
+            } else {
+
+                // alert("You have been logged-out due to log-in from another device.");
+                // console.log('you are logg out ');
+                //  handleLogout();
+            }
+
+        } catch (error) {
+
+            setLoading(false);
+            setIsDialogOpen2(true)
+            const errorMessage = `Response not recieved  from server-S. Please check if transaction completed successfully, else retry.. (${error}). `;
+            setModalMessage(errorMessage);
 
         }
-        const tfhex = parseInt(selectedTariff.replace(".", ""), 10).toString(16).padStart(4, '0')
-        // const tfhex = parseInt(tariffrate.replace(".", ""), 10).toString(16).padStart(4, '0');
-        // console.log("hex Tariff  ", tfhex);
-
-        const phhex = parseInt(numberPart.toString(), 10).toString(16).padStart(10, '0');
-        // console.log("typehex", typeHex, srHex, dayHex, monthHex, yearHex, hourHex, minuteHex, tknhex, amhex, tfhex, phhex);
-        const hextokenData = `${typeHex}${srHex}${dayHex}${monthHex}${yearHex}${hourHex}${minuteHex}${tknhex}${amhex}${tfhex}${phhex}`;
-        //  console.log('hexalldata ', hextokenData);
-        //  console.log('trarrie token ', tfhex);
-        const part1 = hextokenData.substring(0, 32);
-        const part2 = hextokenData.substring(32);
-        // console.log("part1", part1);
-        //  console.log("part2", part2);
-
-        const key = getKey(phhex, srHex, password);
-        //  console.log('key', key);
-        const result = encryptData(part1, key);
-
-        //  console.log("Main result", result);
-
-        const data = result + part2;
-        //  console.log('May data >', data);
-        var formatData = '5657' + '18' + '52434D5452' + data;
-        const CRC = checksum(formatData);
-        // formatData = token for recharge (reachege toke to )
-        formatData = formatData + CRC + '56'; //token is
-        //   console.log("generateFormattedData: CRC " + formatData);
-        const amount8 = parseInt(rechargeAmount.toString(), 10).toString(16).padStart(8, '0');
-        // const tfhex4 = parseInt((tf / 100.0).toString(), 10).toString(16).padStart(4, '0');
-        const tfhex4 = parseInt(selectedTariff.replace(".", ""), 10).toString(16).padStart(4, '0');
-        // const tfHexadecimal = (tf / 100.0).toString(16).replace(/\.(.*)/, (_, decimal) => '.' + parseFloat(`0.${decimal}`).toFixed(2));
-        ///  console.log("new define tarrif rate ", selectedTariff);
-        const timehex = parseInt(ltime.toString(), 10).toString(16).padStart(12, '0');
-        //   console.log("time hex vauesl", timehex);
-
-        // const timehex = parseInt((printServerTimestamp()).toString(), 10).toString(16).padStart(12, '0');
-        const totalData = `${amount8}${tfhex4}${timehex}FFFFFFFF`;
-
-        //  console.log("new totaldata ", totalData);
-        // console.log("new Server time ", ltime );
-        // console.log ('total data: ', totalData);
-        // console.log ('timestampehx : ', timehex);
-        //   console.log('Single tarrif ', tfhex4);
-        const dateObj1 = new Date(serverTime);
-        const year1 = dateObj1.getFullYear().toString().slice(-2);
-        const month1 = (dateObj1.getMonth() + 1).toString().padStart(2, '0'); // Adding 1 since months are zero-indexed
-        const day1 = dateObj1.getDate().toString().padStart(2, '0');
-        const formattedDate = `${day1}${month1}${year1}`;
-        // console.log('naw date of time ',formattedDate);
-        const minutes = minute.toString().substring(0, 1);
-        //console.log("fornatedd Time ", formattedDate)
-        const formattedTime = `${hour}${minutes}`;
 
 
-        //console.log('checktime11111111111',formattedTime);
-        const ulrData = encryptData(totalData, '6D783230313139390000000000000000');
-        //  console.log('UrlsData: ', ulrData);
-        const finalUrls = `https://dk9936.github.io/re-tok-${tokenCount1}-${selectedSerial}-${formattedDate}-${formattedTime}/${formatData}${ulrData}`;
-        // Construct the formatted date string in dd-mm-yy hh:mm:ss format
-        // console.log(formattedDate1);
-        const date = new Date(serverTime);
-
-
-        // Extract year, month, day, hours, minutes, and seconds
-        const year3 = date.getFullYear().toString().slice(-2); // Extract last 2 digits of the year
-        const month3 = ('0' + (date.getMonth() + 1)).slice(-2); // Adding leading zero if month is a single digit
-        const day3 = ('0' + date.getDate()).slice(-2); // Adding leading zero if day is a single digit
-        const hours3 = ('0' + date.getHours()).slice(-2); // Adding leading zero if hours is a single digit
-        const minutes3 = ('0' + date.getMinutes()).slice(-2); // Adding leading zero if minutes is a single digit
-        const seconds3 = ('0' + date.getSeconds()).slice(-2); // Adding leading zero if seconds is a single digit
-
-        // Construct the formatted date string in dd-mm-yy hh:mm:ss format
-        const formattedDate3 = `${day3}-${month3}-${year3}, ${hours3}:${minutes3}:${seconds3}`;
-        // eslint-disable-next-line
-        let mybalance = Number(balance).toFixed(2);
-        //  console.log('myAvailable', mybalance);
-        // eslint-disable-next-line
-
-        uploadDate(
-            selectedSerial,
-            tokenCount,
-            formatData,
-            finalUrls,
-            formattedDate3,
-            formatData,
-            mybalance,
-            rechargeAmount1,
-            selectedTariff,);
-
-        console.log("finalUrls", finalUrls);
-
-        setTokenUrl(finalUrls);
-        sendOTP(finalUrls);
-        handleSendMessage(finalUrls);
-
-
-
-        return finalUrls;
     }
 
-    const uploadDate = (
+    const uploadDate = async (
         srNumber,
         tokenId,
         token,
@@ -756,10 +778,17 @@ function Singlemeter() {
     ) => {
         let tk = (parseInt(tokenId)).toString();
         if (tk.length === 1) {
-            tk = "0" + tk
+            tk = "0" + tk;
         }
+
         const baseUrlMeterDetails = database.ref('/adminRootReference/meterDetails/');
         const tokensRef = baseUrlMeterDetails.child(selectedSerial).child('rechargeToken');
+
+        // Assuming getDatabase is defined elsewhere
+        const db = getDatabase();
+        const adminRootReference = ref(db, `/adminRootReference/meterDetails/${selectedSerial}/rechargeToken/${ltime}-${tk}`);
+
+        const fullAdminProfilePath = adminRootReference.toString();
 
         tokensRef.once('value', (snapshot) => {
             let tokenCount = snapshot.numChildren();
@@ -776,58 +805,179 @@ function Singlemeter() {
                     });
                 });
             }
-
-            tokensRef.child(`${ltime}-${tk}`).set({
-                balance: "null",
-                isEmergency: false,
-                isOC: false,
-                kwh: "null",
-                phoneNumber: numberPart, //adminPhone.toString()
-                link: finalUrls,
-                rechargeAmount: formattedAm, //rechargeAmount.toString()
-                rechargeToken: formatData, // finalUrls.toString()
-                serialNumber: srNumber,
-                tariffRate: tfRate,
-                tokenGenerationTime: formattedDate3,
-                tokenId: tk
-            }).then(() => {
-                //  console.log('Data Updated Successfully');
-                //  alert('Recharge token generate Successfully');
-
-                try {
-                    Sessionid.updateSessionTimeActiveUser(phoneNumber);
-                } catch (error) {
-
-                    setLoading(false);
-                    setIsDialogOpen2(true)
-                    const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
-                    setModalMessage(errorMessage);
-                }
-
-
-
-
-                setisModalOpenModelalert(true)
-                // sendOTP();
-                //  handleSendMessage ();
-
-                //  window.location.reload(); // This line reloads the page
-            }).catch((error) => {
-                console.error('Error updating data:', error);
-            });
-
-            updateTokenCount(tk, srNumber);
         });
 
+        const saveTariffRate = {
+            balance: "null",
+            isEmergency: false,
+            isOC: false,
+            kwh: "null",
+            phoneNumber: numberPart, // adminPhone.toString()
+            link: finalUrls,
+            rechargeAmount: formattedAm, // rechargeAmount.toString()
+            rechargeToken: formatData, // finalUrls.toString()
+            serialNumber: srNumber,
+            tariffRate: tfRate,
+            tokenGenerationTime: formattedDate3,
+            tokenId: tk,
+        };
+
+        setTokenUrl(finalUrls);
+
+        const dataToSend = {
+            [fullAdminProfilePath]: saveTariffRate,
+        };
+
+        try {
+            const result = await Sessionid.callWriteRtdbFunction(dataToSend);
+            /// console.log('Data:', result);
+            setisModalOpenModelalert(true);
+            setLoading(false);
+        } catch (error) {
+            setLoading(false);
+            setIsDialogOpen2(true);
+            const errorMessage = `Response not received from server-A. Please check if the transaction completed successfully, else retry. (${error}).`;
+            setModalMessage(errorMessage);
+        }
+
+        updateTokenCount(tk, srNumber);
     };
 
 
-    function updateTokenCount(token, selectedSerial) {
+    // const uploadDate = async  (
+    //     srNumber,
+    //     tokenId,
+    //     token,
+    //     finalUrls,
+    //     formattedDate3,
+    //     formatData,
+    //     mybalance,
+    //     formattedAm,
+    //     tfRate,
+    // ) => {
+    //     let tk = (parseInt(tokenId)).toString();
+    //     if (tk.length === 1) {
+    //         tk = "0" + tk
+    //     }
+
+    //     const baseUrlMeterDetails = database.ref('/adminRootReference/meterDetails/');
+    //     const tokensRef = baseUrlMeterDetails.child(selectedSerial).child('rechargeToken');
+
+    //     // const saveTariffReference = `/adminRootReference/meterDetails/${selectedSerial}/rechargeToken/${ltime}-${tk}`;
+
+    //     const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+    //     const adminRootReference = ref(db, `/adminRootReference/meterDetails/${selectedSerial}/rechargeToken/${ltime}-${tk}`);
+    //     // const adminRootReference1 = ref(db, `/adminRootReference/meterDetails/${selectedSerial}/rechargeToken/`);
+
+    //     const fullAdminProfilePath = adminRootReference.toString();
+    //     //  const fullAdminProfilePath1 = adminRootReference1.toString();
+
+    //     tokensRef.once('value', (snapshot) => {
+    //         let tokenCount = snapshot.numChildren();
+    //         if (tokenCount >= 20) {
+    //             // Fetch the oldest child
+    //             tokensRef.orderByKey().limitToFirst(1).once('value', (oldestSnapshot) => {
+    //                 oldestSnapshot.forEach((childSnapshot) => {
+    //                     // Remove the oldest child
+    //                     tokensRef.child(childSnapshot.key).remove().then(() => {
+    //                         console.log('Oldest Data Removed');
+    //                     }).catch((error) => {
+    //                         console.error('Error removing oldest data:', error);
+    //                     });
+    //                 });
+    //             });
+    //         }
+
+
+    //         const saveTariffRate = {
+    //             balance: "null",
+    //             isEmergency: false,
+    //             isOC: false,
+    //             kwh: "null",
+    //             phoneNumber: numberPart, // adminPhone.toString()
+    //             link: finalUrls,
+    //             rechargeAmount: formattedAm, // rechargeAmount.toString()
+    //             rechargeToken: formatData, // finalUrls.toString()
+    //             serialNumber: srNumber,
+    //             tariffRate: tfRate,
+    //             tokenGenerationTime: formattedDate3,
+    //             tokenId: tk
+
+    //         };
+    //         const dataToSend = {
+    //             [fullAdminProfilePath]: saveTariffRate,
+
+    //         };
+
+    //         try {
+
+    //            const result = await Sessionid.callWriteRtdbFunction(dataToSend);
+
+    //            console.log('Data :',result);
+
+    //             setisModalOpenModelalert(true);
+
+    //             setLoading(false);
+    //         } catch (error) {
+
+    //             setLoading(false);
+    //             setIsDialogOpen2(true)
+    //             const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry.  (${error}).  `;
+    //             setModalMessage(errorMessage);
+
+
+    //         }
+
+
+
+    //         // tokensRef.child(`${ltime}-${tk}`).set({
+    //         //     balance: "null",
+    //         //     isEmergency: false,
+    //         //     isOC: false,
+    //         //     kwh: "null",
+    //         //     phoneNumber: numberPart, //adminPhone.toString()
+    //         //     link: finalUrls,
+    //         //     rechargeAmount: formattedAm, //rechargeAmount.toString()
+    //         //     rechargeToken: formatData, // finalUrls.toString()
+    //         //     serialNumber: srNumber,
+    //         //     tariffRate: tfRate,
+    //         //     tokenGenerationTime: formattedDate3,
+    //         //     tokenId: tk
+    //         // }).then(() => {
+    //         //  console.log('Data Updated Successfully');
+    //         //  alert('Recharge token generate Successfully');
+
+
+    //         // try {
+    //         //     Sessionid.updateSessionTimeActiveUser(phoneNumber);
+    //         // } catch (error) {
+
+    //         //     setLoading(false);
+    //         //     setIsDialogOpen2(true)
+    //         //     const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+    //         //     setModalMessage(errorMessage);
+    //         // }
+
+
+    //         // sendOTP();
+    //         //  handleSendMessage ();
+
+    //         //  window.location.reload(); // This line reloads the page
+    //         // }).catch((error) => {
+    //         //     console.error('Error updating data:', error);
+    //         // });
+
+    //       updateTokenCount(tk, srNumber);
+    //     });
+
+    // };
+
+    function updateTokenCount(tokn, selectedSerial) {
         const baseUrlMeterDetails = database.ref('/adminRootReference/meterDetails/');
         const tokensRef = baseUrlMeterDetails.child(selectedSerial).child('rechargeToken');
 
         tokensRef.update({
-            tokenCount: token
+            tokenCount: tokn
         });
 
     }
@@ -898,7 +1048,7 @@ function Singlemeter() {
     }
 
     const handleTariffChange = (e) => {
-
+        selectedTariff('');
         setTariffError('');
         //   setSelectedTariff(e.target.value);
         selectedTariff = e.target.value;
@@ -913,17 +1063,16 @@ function Singlemeter() {
 
     //         setRechargeAmount(sanitizedValue);
 
-
     // };
 
+    const [rechargeAmountDisplay, setRechargeAmountInput] = useState('');
 
 
     const handleInputChange = (e) => {
         // Remove any non-digit characters and leading zeros
-        setRechargeAmount('');
+
+       // setRechargeAmount('');
         setAmountError('');
-
-
         let sanitizedValue = e.target.value.replace(/[^0-9]/g, '').replace(/^0+/, '');
 
         const value = e.target.value;
@@ -934,6 +1083,7 @@ function Singlemeter() {
 
         if (isValid || sanitizedValue === '') {
             setRechargeAmount(sanitizedValue);
+            setRechargeAmountInput(sanitizedValue);
         } else {
             // Show error message
             // console.error('Invalid amount. Please enter a value between 1 and 50,000 without decimal digits (paise).');
@@ -943,6 +1093,8 @@ function Singlemeter() {
         // setRechargeAmount(sanitizedValue);
     };
 
+
+    const [sendPhonetoken, setSendPhoneToken] = useState('');
 
     const sendOTP = async (urls) => {
 
@@ -970,27 +1122,26 @@ function Singlemeter() {
 
         try {
             const response = await axios.get(apiUrl);
-            //  console.log(response.data);
-            //  console.log('Token  sent successfully!');
 
+            // const result = response.data;
+            /// console.log('Token  sent successfully!');
+            setSendPhoneToken(`Token  sent to sms. ${phoneNumber} via sms.`);
         } catch (error) {
-            /// console.error('Error sending Token:', error);
-            //   console.log('Failed to send Token. Please try again.');
+
+            console.error(`Invalid Number (${error.response.data.status_code}) `);
+
+            setSendPhoneToken(`Unable to send token link via sms. Please check consumer mobile number. (Invalid number, code-${error.response.data.status_code})`);
 
         }
-
-
     }
-
-
     const handleSendMessage = async (urls) => {
-
         //  console.log("selected email  address", selectedEmail);
         //  console.log("check url ", urls);
-
         let result = Message(urls, selectedEmail);
 
         // console.log("Signlemetere: Send url successfull ", result);
+
+
 
     }
 
@@ -1055,7 +1206,6 @@ function Singlemeter() {
     const [mytoken, setMyToken] = useState(null);
     const [loading, setLoading] = useState(true);
 
-
     const handleCancelButton = () => {
         //  setLoading(false);
         setRechargeAmount('');
@@ -1063,27 +1213,23 @@ function Singlemeter() {
         selectedTariff = '';
         setSelectedSerial('');
         setSelectedMeter('');
+        settokenGenerationTime('');
         setisModalOpenModelalert(false);
     }
 
     const closeModalModel = () => {
         // setLoading(false);
         setRechargeAmount('');
+        settokenGenerationTime('');
         setSelectedSerial('');
         selectedTariff = '';
         setSelectedSerial('');
         setSelectedMeter('');
-
         setIsModalOpenModel(false);
     };
-
-
     const confirmGenerate = () => {
         // Additional logic you want to execute when the user confirms generation
-
-
         setIsModalOpenModel(false);
-
         handleGenerateClick();
     };
 
@@ -1129,12 +1275,10 @@ function Singlemeter() {
 
     };
 
-    const [getRecahrge, setgetReacharge] = useState('');
-    const [tokenGenerationTime, settokenGenerationTime] = useState('');
-    const [tariffRate, settariffRate] = useState('');
-
-
-
+    // const [getRecahrge, setgetReacharge] = useState('');
+    // const [tokenGenerationTime, settokenGenerationTime] = useState('');
+    // const [tariffRate, settariffRate] = useState('');
+    // const [tariffRateDisplay, settariffRateDisplay] = useState('');
 
     const updateSessionActiveTime = (numberPart) => {
         Sessionid.updateSessionTimeActiveUser(numberPart);
@@ -1169,22 +1313,13 @@ function Singlemeter() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
 
-
-
-    const openDialog = () => {
-        setIsDialogOpen(true);
-    };
-
     const closeDialog = () => {
         setIsDialogOpen(false);
     };
 
     const handleOk = () => {
-        // Add functionality for OK button
-        ///   console.log("OK button clicked!");
-        closeDialog(); // Close the dialog after OK is clicked
+        closeDialog();
     };
-
 
     const [isDialogOpen1, setIsDialogOpen1] = useState(false);
 
@@ -1205,9 +1340,6 @@ function Singlemeter() {
         setSelectedSerial('');
         setSelectedMeter('');
         setAmountError('');
-        // Add functionality for OK button
-        console.log("OK button clicked!");
-        // closeDialog1(); // Close the dialog after OK is clicked
         setIsDialogOpen1(false);
     };
 
@@ -1217,14 +1349,11 @@ function Singlemeter() {
 
     const closeDialog2 = () => {
         setIsDialogOpen2(false);
-
-        // window.location.reload(); // This will reload the page
+        window.location.reload(); // This will reload the page
     };
 
-
-
-
     const handleChange = (e) => {
+        setTokenUrl('');
         setErrorSerial('');
         const selectedValue = e.target.value;
         const [selectedSerial, selectedName] = selectedValue.split(' - ');
@@ -1234,6 +1363,8 @@ function Singlemeter() {
 
         if (selectedValue.includes('-')) {
             setSelectedMeter(selectedValue);
+            setSelectedSerialDisplay(selectedValue);
+
         } else {
             setIsDialogOpen1(true);
             setSelectedMeter(selectedValue.split(' - ')[0]);
@@ -1243,6 +1374,8 @@ function Singlemeter() {
         setSelectedEmail(selectedEmail);
         setSelectedPhone(selectedPhone);
         setSelectedSerial(selectedSerial);
+
+        setSelectedSerialDisplay(selectedSerial);
         selectedTariff = selectedInfo?.tariff;
 
         // Fetch and print tokens based on the selected serial number
@@ -1253,19 +1386,46 @@ function Singlemeter() {
     };
 
 
+
+    const handleClick = () => {
+        window.location.reload();
+
+    };
+
+
+    let formatokenCount = tokenCount < 10 ? `0${tokenCount}` : tokenCount.toString();
+    let formatrechargeAmountDisplay = rechargeAmountDisplay < 10 ? `0${rechargeAmountDisplay}` : rechargeAmountDisplay.toString();
+
+
     return (
         <>
 
-
-            {loading ? (
+            {/* {loading ? (
                 <div style={{ position: 'fixed', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
                     <div className="spinner-border text-danger" role="status">
                         <span className="sr-only">Loading...</span>
                     </div>
                 </div>
+            ) : null} */}
+
+            {loading ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>
             ) : null}
-
-
             <>
 
                 <div className='responsive'>
@@ -1354,16 +1514,12 @@ function Singlemeter() {
                                                     style={{ width: '100%', textAlign: 'left' }}
                                                     onClick={() => handleChange({ target: { value: name ? `${serial} - ${name}` : serial } })}
                                                 >
-                                                    {serial} {tokenStatus[serial]}, {name}
+                                                    {serial} {tokenStatus[serial]} {name}
                                                 </Dropdown.Item>
                                             ))}
                                         </Dropdown.Menu>
                                     </Dropdown>
-
-
-
                                     {errorSerial && <div style={{ color: 'red' }}>{errorSerial}</div>}
-
                                 </div>
 
                                 {/* Second Input Field */}
@@ -1391,7 +1547,6 @@ function Singlemeter() {
                                         value={rechargeAmount}
                                         onChange={handleInputChange}
                                         disabled={loading}
-
                                     />
                                     {amountError && <div style={{ color: 'red' }}>{amountError}</div>}
                                     <span>Min. limit 1, max. limit 50,000, Decimal digit (Paise Notallowed )</span>
@@ -1407,12 +1562,20 @@ function Singlemeter() {
                                         onChange={(e) => setTokenCount(e.target.value)}
                                         readOnly
                                         disabled
-
                                     // Add necessary state and onChange handler
                                     />
                                 </div>
-
-                                <div className="col-md-12 text-center ">
+                                <div className="col-md-6 mb-3">
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        disabled={loading}
+                                        onClick={handleClick}
+                                    >
+                                        Back
+                                    </button>
+                                </div>
+                                <div className="col-md-6 mb-3">
                                     <button
                                         type="button"
                                         className="btn btn-primary"
@@ -1425,22 +1588,31 @@ function Singlemeter() {
                             </div>
                         </div>
 
-
                         {/* <p>{selectedEmail}</p>
                 <p>{selectedPhone}</p> */}
                     </div>
                 </div>
-
-
                 <div className='Tokenurl' >
-
                     {tokenurl && (
                         <>
+                            <div>
+                                <p style={{ color: 'red' }}>{sendPhonetoken}</p>
+                            </div>
+
                             <p>{tokenurl}</p>
 
-
+                            <div>
+                                <p>
+                                    Token has been succesfully generated and saved to server.                                </p>
+                                <p> You can also share the offline recharge link.</p>
+                                <p>Details:</p>
+                                <p>Meter Serial No. : {selectedSerialDisplay}</p>
+                                <p>Recharge Amt. : {formatrechargeAmountDisplay}</p>
+                                <p>Tariff Rate : {tariffRateDisplay}</p>
+                                <p>Token Number : {formatokenCount} </p>
+                            </div>
                             <div className='social_media_Icon'>
-                                <p >Share Via: </p>
+                                <p >Share Via : </p>
                                 <EmailShareButton style={{ margin: '10px' }} url={tokenurl} >
                                     <img width="38" height="38"
                                         src="https://img.icons8.com/fluency/48/gmail-new.png"
@@ -1453,6 +1625,7 @@ function Singlemeter() {
                                     <WhatsappIcon size={35} round={true} />
                                 </WhatsappShareButton>
                             </div>
+
                         </>
                     )}
 
@@ -1509,10 +1682,6 @@ function Singlemeter() {
                 </Modal.Footer>
             </Modal>
 
-
-
-
-
             <Modal show={isModalOpenModel} onHide={closeModalModel} backdrop="static" style={{ position: 'fixed', top: '70%', left: '50%', transform: 'translate(-50%, -50%)' }}>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirmation </Modal.Title>
@@ -1520,13 +1689,19 @@ function Singlemeter() {
                 <Modal.Body className='bg-light'>
 
                     <p>Generate a recharge token for <span style={{ color: 'blue' }}>{selectedSerial}? </span> </p>
-
                     <p>Amount  : ₹ {rechargeAmount}</p>
-                    <p>Tariff   : ₹ {tariffRate}</p>
+                    <p>Tariff   : ₹ {selectedTariff}</p>
 
-                    <p style={{ color: 'red' }}>You have already generate a token for ₹ {getRecahrge} on {tokenGenerationTime} (Last 24 hours). Are you sure want to generate
+                    {tokenGenerationTime && (
+                        <p style={{ color: 'red' }}>
+                            You have already generated a token for ₹ {getRecahrge} on {tokenGenerationTime} (Last 24 hours). Are you sure you want to generate another token?
+                        </p>
+                    )}
+
+
+                    {/* <p style={{ color: 'red' }}>You have already generate a token for ₹ {getRecahrge} on {tokenGenerationTime} (Last 24 hours). Are you sure want to generate
                         another token?
-                    </p>
+                    </p> */}
 
                 </Modal.Body>
                 <Modal.Footer>
@@ -1538,10 +1713,6 @@ function Singlemeter() {
                 </Modal.Footer>
             </Modal>
 
-            {/* <div className="app"  style={{ position: 'fixed', top: '70%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                <button onClick={openDialog} className="btn btn-primary">
-                    Open Dialog
-                </button> */}
             <PopupDialog
                 isOpen={isDialogOpen}
                 onClose={closeDialog}

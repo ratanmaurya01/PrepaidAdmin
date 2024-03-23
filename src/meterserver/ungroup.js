@@ -555,15 +555,27 @@ function Ungroup() {
 
 
   return (
-
-
     <>
-
       <div style={{ marginLeft: '20%' }} >
         <div className='container'>
-          {isLoading ? (
-            <div>Loading...</div>
-          ) : (
+        {isLoading ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>
+            ) : null}
 
             <>
 
@@ -879,7 +891,7 @@ function Ungroup() {
                 </div>
 
               </>
-          )}
+        
             </div>
         </div>
       </>

@@ -19,7 +19,6 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation(); // Placing useLocation here
   const { state } = location;
-
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState(null);
@@ -27,10 +26,6 @@ const Login = () => {
   const [phoneNumberError, setPhoneNumberError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-
-
-
 
   useEffect(() => {
     if (state && state.password && state.localphoneNumber) {
@@ -41,6 +36,7 @@ const Login = () => {
   }, [state]);
 
   const onLogin = async (e) => {
+
 
     e.preventDefault();
     if (!phoneNumber) {
@@ -79,13 +75,13 @@ const Login = () => {
       //   return;
       // }
 
-        if (error.code === "auth/user-not-found") {
-       // Handle the case when the phone number does not match with Firebase or when the password is incorrect
-         setError("Account does not exist with this mobile number.");
-         return;
-       }
+      if (error.code === "auth/user-not-found") {
+        // Handle the case when the phone number does not match with Firebase or when the password is incorrect
+        setError("Account does not exist with this mobile number.");
+        return;
+      }
 
-      if (error.code === "auth/wrong-password"){
+      if (error.code === "auth/wrong-password") {
         setError("Incorrect Password.");
         return;
       }
@@ -102,11 +98,8 @@ const Login = () => {
 
 
   const handlePhoneNumberChange = (e) => {
-
     setError('');
-
     setPhoneNumberError('');
-
     let input = e.target.value.replace(/\D/, '').slice(0, 10); // Remove non-digit characters and limit length to 10 digits
 
     if (input.length > 0 && input.charAt(0) === '0') {
@@ -142,10 +135,10 @@ const Login = () => {
           navigate("/forgetpassword", { state: { phoneNumber } });
         } else {
           // User does not exist, show error message
-          setError('User does not exist. Please create an account.');
+          setError('Account does not exist with this mobile number.');
         }
       } catch (error) {
-        alert('Error checking user existence. Please try again later.');
+        //  alert('Error checking user existence. Please try again later.');
         console.error('Error checking user existence:', error);
       }
     } else {
@@ -162,17 +155,46 @@ const Login = () => {
     setShowPassword(!showPassword);
   };
 
+
+
+
+
+
+
   return (
     <>
       <div>
-
-
         <Mainhomepage />
-
       </div>
       <div>
-        {isLoading && <p style={{ marginLeft: '10%' }}
-          className="spinner-border text-danger" role="status"></p>}
+
+
+
+        {/* {isLoading && <p style={{ marginLeft: '10%' }}
+          className="spinner-border text-danger" role="status"></p>} */}
+
+
+        {isLoading ? (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: '9999'
+          }}>
+            <div className="spinner-border text-danger" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        ) : null}
+
+
+
       </div>
 
       <div className="containerpage" id="container">

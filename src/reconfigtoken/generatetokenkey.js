@@ -11,13 +11,11 @@ class Generatetoken {
 
         this.crypto = {
             getKey: this.getKey.bind(this),
-        };
-        
+        };  
     } 
-
      tokenKey(serverTime, type, phoneNumber, sr, pass, adkey) {
 
-     console.log("tokenKey : ", serverTime, type, phoneNumber, sr, pass, adkey);
+  //   console.log("tokenKey : ", serverTime, type, phoneNumber, sr, pass, adkey);
         const dateObj = new Date(serverTime);
         const year = dateObj.getFullYear().toString();
         const month = (dateObj.getMonth() + 1).toString(); // Adding 1 since months are zero-indexed

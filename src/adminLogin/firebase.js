@@ -8,7 +8,6 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from '@firebase/app-c
 
 const firebaseConfig = {
 
-
   apiKey: "AIzaSyA-V6fIpm5Jff8p-pN3vf67nTBBa-gJdJU",
   authDomain: "mij-prepaid-meter.firebaseapp.com",
   databaseURL: "https://mij-prepaid-meter-default-rtdb.firebaseio.com",
@@ -47,45 +46,4 @@ const getMyAppCheckToken = async () => {
 };
 
 export { app, database, auth, functions, analytics, appCheck, httpsCallable, getMyAppCheckToken };
-
-
-
-
-
-
-
-
-
-
-// // import firebase from 'firebase/app';
-// // import 'firebase/auth';
-// // import 'firebase/functions';
-// // import 'firebase/app-check';
-
-
-// // const firebaseConfig = {
-// //   // Your Firebase project configuration
-// //   // You can find this in your Firebase Console under project settings
-// //   apiKey: "AIzaSyA-V6fIpm5Jff8p-pN3vf67nTBBa-gJdJU",
-// //   authDomain: "mij-prepaid-meter.firebaseapp.com",
-// //   databaseURL: "https://mij-prepaid-meter-default-rtdb.firebaseio.com",
-// //   projectId: "mij-prepaid-meter",
-// //   storageBucket: "mij-prepaid-meter.appspot.com",
-// //   messagingSenderId: "288843518536",
-// //   appId: "1:288843518536:web:3be929c9b42871b366fe7d",
-// //   measurementId: "G-9THQD38NGC"
-// //   // ... (other configurations)
-// // };
-
-// // // Initialize Firebase
-// // const app = firebase.initializeApp(firebaseConfig);
-// // const auth = app.auth();
-// // const functions = firebase.functions();
-
-// // const appCheck = firebase.appCheck();
-// // const siteKey = 'AIzaSyA-V6fIpm5Jff8p-pN3vf67nTBBa-gJdJU'; // Replace with your reCAPTCHA site key
-// // appCheck.activate(siteKey);
-// // export { app, auth, functions };
-
-
 

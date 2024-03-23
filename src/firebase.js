@@ -14,8 +14,7 @@ const firebaseConfig = {
   // messagingSenderId: "886469759672",
   // appId: "1:886469759672:web:3288b2d981bdf5fdc85a4d"
 
-
-
+  
   apiKey: "AIzaSyA-V6fIpm5Jff8p-pN3vf67nTBBa-gJdJU",
   authDomain: "mij-prepaid-meter.firebaseapp.com",
   databaseURL: "https://mij-prepaid-meter-default-rtdb.firebaseio.com",

@@ -11,9 +11,12 @@ import { Modal, Button } from 'react-bootstrap';
 import { validateName } from '../validation/validation';
 import CommonFuctions from '../commonfunction';
 import GroupName from './groupchange';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, NavLink, Navigate } from 'react-router-dom';
+
+import { ref, set, get, child, getDatabase, onValue } from 'firebase/database';
 
 import SelectedGroupName from './selectedgroup';
+import { faBullseye } from '@fortawesome/free-solid-svg-icons';
 
 function Groupdetails() {
 
@@ -52,7 +55,6 @@ function Groupdetails() {
     const [selectedGroupName, setSelectedGroupName] = useState(''); // State to store selected group name
     //  const [groupName, setGroupName] = useState(false);  //selectedGroupName ||
 
-
     const [selectedGroup, setSelectedGroup] = useState('');
     const [selectedExistingGroupName, setSelectedExistingGroupName] = useState()
     const [numberPart, setNumberPart] = useState(''); // New state for numberPart
@@ -60,20 +62,17 @@ function Groupdetails() {
     const [groupNameError, setGroupNameError] = useState('');
     const [tariffRateError, setTariffRateError] = useState('');
     const [groupTariffRate, setGroupTariifRate] = useState('');
-    const [loading, setLoading] = useState(true);
-
-
-
-
-
-
-
-
+    const [loading, setLoading] = useState(false);
 
     let isGroupNameChanged = false;
 
 
+
+
     useEffect(() => {
+
+
+
         const unsubscribe = auth.onAuthStateChanged((authUser) => {
             if (authUser) {
                 setUser(authUser);
@@ -87,7 +86,7 @@ function Groupdetails() {
                     handleSearch1(numberPart);
                     SessionValidate(numberPart);
                     SessionUpdate(numberPart);
-                    setLoading(false);
+
 
                 }
             } else {
@@ -96,7 +95,7 @@ function Groupdetails() {
             }
         });
         return () => {
-            setIsLoading(false);
+
             unsubscribe();
         };
     }, []);
@@ -142,6 +141,8 @@ function Groupdetails() {
 
 
     const handleSearch = async (phoneNumber) => {
+
+
         const trimmedPhoneNumber = phoneNumber.trim();
         if (trimmedPhoneNumber !== '') {
             try {
@@ -158,6 +159,7 @@ function Groupdetails() {
                     const options = Object.keys(newData).map(key => key.replace(/_/g, ' '));
                     // console.log("groupData", options);
                     setSelectOptions(options);
+
                 }
                 setSearchExecuted(true);
             } catch (error) {
@@ -284,8 +286,8 @@ function Groupdetails() {
 
     const handleCustomBoxClick = (groupName, serial, info) => {
 
-        console.log(" slelect Group Name:", groupName, "Serial:", serial, "Info:", info);
-        console.log(" slelect Group Name:", editGroupName);
+        // console.log(" slelect Group Name:", groupName, "Serial:", serial, "Info:", info);
+        // console.log(" slelect Group Name:", editGroupName);
         // setSelectedSerialData({ serial,
         // setSelectedSerialData({ serial, info });
 
@@ -843,6 +845,7 @@ function Groupdetails() {
 
         const { serial, info } = selectedSerialData;
 
+
         let locationError = '';
         let nameError = '';
         let phoneError = '';
@@ -871,6 +874,8 @@ function Groupdetails() {
             //  return;
         }
 
+
+
         const storeSessionId = localStorage.getItem('sessionId');
 
         try {
@@ -890,44 +895,97 @@ function Groupdetails() {
                 const formattedGroupName = selectedGroupName.split(' ').join('_');
                 const newgroupName = groupName.replace(/ /g, '_');
 
+                const newTariffRate = displayedInput2 || info.tariff;
+
+                // console.log("Formated groupname : ", formattedGroupName);
+                // console.log("new GRoup Name  : ", newgroupName);
+                // console.log("new Tariff rate : ", newTariffRate);
+                // console.log("enter all data : ", info.name);
+                // console.log("enter all data : ", info.serial);
+                // console.log("enter all data : ", info.location);
+                // console.log("enter all data : ", info.phone);
+                // console.log("enter all data : ", info.doo);
+                // console.log("enter all data : ", info.tariff);
+                // console.log('all data :', info);
+
+
                 const databasePath = `/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/${serial}`;
                 const deletePath = `/adminRootReference/tenantDetails/${numberPart}/${newgroupName}/${serial}`;
                 const tariffReference = `/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/tariff`;
                 const findGroupChild = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${newgroupName}`);
 
+                // Update through firebase Function 
+
+                const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+                const adminRootReference = ref(db, `adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/${serial}`);
+                const fullAdminProfilePath = adminRootReference.toString();
+
+
+                const tariffRefe = firebase.database().ref(`/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/tariff`);
+                const saveTariffReference = tariffRefe.toString();
+
+
+                // const dataToSend = {
+                //     [fullAdminProfilePath]: info
+                // };
+
+                // const saveTariffRate = {
+                //     [saveTariffReference]: newTariffRate
+                // };
+
+
+                const dataToSend = {
+                    [fullAdminProfilePath]: info,
+                    [saveTariffReference]: newTariffRate
+                };
+
+
                 if (formattedGroupName !== groupName) {
                     isGroupNameChanged = true;
 
+                    try {
+                        const result = await cfunction.callWriteRtdbFunction(dataToSend);
+                        await firebase.database().ref(deletePath).remove();
+                        console.log('Serial meter Save in11 :', result);
+                        //  const result2 = await cfunction.callWriteRtdbFunction(saveTariffRate);
+                        // console.log('Tariif rate in groupname11 :', result2);
+                        //  await firebase.database().ref(databasePath).update(info);
+                        //  await firebase.database().ref(tariffReference).set(newTariffRate);
 
+                    } catch (error) {
 
-                    await firebase.database().ref(databasePath).update(info);
-                    const newTariffRate = displayedInput2 || info.tariff;
-                    await firebase.database().ref(tariffReference).set(newTariffRate);
-                    await firebase.database().ref(deletePath).remove();
+                        setisResponseModel(true);
+                        // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                        const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry.(${error}). `;
+                        setmodalMessageResponse(errorMessage);
+                        setLoading(false);
+
+                    }
+
 
                     cfunction.isAnyMeterExist(findGroupChild)
                         .then((childCount) => {
                             if (childCount == 0) {
                                 findGroupChild.remove().then(() => {
-                                    console.log('Remove successfully');
+                                    //  console.log('Remove successfully');
                                 }).catch(() => {
-                                    console.log('Error deleting Firebase reference');
+                                    // console.log('Error deleting Firebase reference');
                                 });
                             } else {
-                                console.log('Child count is greater than 0');
+                                // console.log('Child count is greater than 0');
                             }
                         })
                         .catch((error) => {
-                            console.error('Error in isAnyMeterExist:', error);
+                            //  console.error('Error in isAnyMeterExist:', error);
                         });
 
-                    const result = cfunction.updateSessionTimeActiveUser(numberPart);
+                    //   const result = cfunction.updateSessionTimeActiveUser(numberPart);
 
-                    console.log('Session id UPdate ', result);
+                    // console.log('Session id UPdate ', result);
 
                     setIsDialogOpenSavedata(true)
-                    const errorMessage = `Data saved successfully!`;
-                    setmodalMessage(errorMessage);
+                    const errorMessage = `Data saved successfully!  rk`;
+                    setmodalSaveMessage(errorMessage);
                     setLoading(false);
                     //setLoading(false);
 
@@ -946,18 +1004,43 @@ function Groupdetails() {
                         setIsDialogOpen(true);
                         const errorMessage = `No changes in existing data.`;
                         setmodalMessage(errorMessage);
+                        setLoading(false);
 
                     } else {
                         isGroupNameChanged = false;
-                        await firebase.database().ref(databasePath).update(info);
-                        const newTariffRate = displayedInput2 || info.tariff;
-                        await firebase.database().ref(tariffReference).set(newTariffRate);
+
+                        try {
+                            const result = await cfunction.callWriteRtdbFunction(dataToSend);
+                            console.log('Serial meter Save in22 :', result);
+                            setIsDialogOpenSavedata(true)
+                            const errorMessage = `Data saved successfully!  rk`;
+                            setmodalSaveMessage(errorMessage);
+                            setLoading(false);
 
 
-                        setIsDialogOpenSavedata(true)
-                        const errorMessage = `Data saved successfully!`;
-                        setmodalMessage(errorMessage);
-                        setLoading(false);
+                        } catch (error) {
+
+                            setisResponseModel(true);
+                            // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                            const errorMessage = `Response not recieved  from server-A.Please check if transaction completed successfully, else retry. (${error}).`;
+                            setmodalMessageResponse(errorMessage);
+                            setLoading(false);
+
+                        }
+
+
+                        //   const result2 = await cfunction.callWriteRtdbFunction(saveTariffRate);
+                        //   console.log('Tariif rate in groupname22 :', result2);
+
+                        //   await firebase.database().ref(databasePath).update(info);
+                        //  const newTariffRate = displayedInput2 || info.tariff;
+                        //  await firebase.database().ref(tariffReference).set(newTariffRate);
+
+
+                        // setIsDialogOpenSavedata(true)
+                        // const errorMessage = `Data saved successfully!`;
+                        // setmodalSaveMessage(errorMessage);
+                        // setLoading(false);
 
                         // alert('Data updated successfully!');
                         // window.location.reload(true);
@@ -974,13 +1057,13 @@ function Groupdetails() {
         }
         catch (error) {
 
-            setIsDialogOpenSavedata(true);
-            setIsDialogOpen(true);
-            // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
-            const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
-            setmodalMessage(errorMessage);
-            setLoading(false);
+            //setIsDialogOpenSavedata(true);
+            setisResponseModel(true);
 
+            // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+            const errorMessage = `Response not recieved  from server-S.Please check if transaction completed successfully, else retry. (${error}).`;
+            setmodalMessageResponse(errorMessage);
+            setLoading(false);
         }
 
     };
@@ -1102,8 +1185,16 @@ function Groupdetails() {
     // };
 
 
-    const handleDelete = async (event) => {
-        event.preventDefault();
+
+    const handleDelete = () => {
+
+        setmodalMessage(`Are you sure you want to delete this data?`);
+        setisConfirmed(true);
+    }
+
+
+    const deleteGroupname = async () => {
+        // event.preventDefault();
 
         setLoading(true);
         const status = await cfunction.checkInternetConnection(); // Call the function
@@ -1118,84 +1209,198 @@ function Groupdetails() {
             //  return;
         }
 
-
         const storeSessionId = localStorage.getItem('sessionId');
-        const { sessionId } = await cfunction.HandleValidatSessiontime(numberPart);
-        if (storeSessionId === sessionId) {
 
+        try {
+            const { sessionId } = await cfunction.HandleValidatSessiontime(numberPart);
 
-            let selectedGroupNamed = selectedGroupName.replace(/ /g, "_");
+            if (storeSessionId === sessionId) {
 
-            if (!selectedSerialData || !selectedGroupNamed) {
-                //   console.error('No selected serial data or group name to delete.');
-                return;
-            }
+                let selectedGroupNamed = selectedGroupName.replace(/ /g, "_");
+                if (!selectedSerialData || !selectedGroupNamed) {
+                    //   console.error('No selected serial data or group name to delete.');
+                    return;
+                }
+                //  console.log('Deleting group name if no serialnumer 12', groupName);
 
-            //  console.log('Deleting group name if no serialnumer 12', groupName);
+                //  console.log('Deleting group name if no serialnumer 34', selectedGroupNamed);
+                // Use window.confirm to display a confirmation dialog
 
-            //  console.log('Deleting group name if no serialnumer 34', selectedGroupNamed);
-            // Use window.confirm to display a confirmation dialog
-            const isConfirmed = window.confirm('Are you sure you want to delete this data?');
-
-            if (isConfirmed) {
                 const { serial } = selectedSerialData;
                 const databasePath = `/adminRootReference/tenantDetails/${numberPart}/${selectedGroupNamed}/${serial}`;
 
+                const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+
                 const findGroupChild = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${selectedGroupNamed}`);
-                // Delete the data from Firebase
 
 
-                firebase.database().ref(databasePath).remove()
-                    .then(() => {
+                const tariffRef1 = firebase.database().ref(`/adminRootReference/tenantDetails/${numberPart}/${selectedGroupNamed}/`);
+                const saveTariffReference1 = tariffRef1.toString();
+
+                // const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+
+                const tariffRef = firebase.database().ref(`/adminRootReference/tenantDetails/${numberPart}/${selectedGroupNamed}/${serial}/`);
+                const saveTariffReference = tariffRef.toString();
+
+                // Create an object with the path to delete and set its value to null
+                const dataToSend = {
+                    [saveTariffReference]: null
+                };
 
 
-                        //  console.log('Data deleted successfully!');
-                        // Add any additional logic you need after deleting
-                        handleClose(); // Close the modal after successful deletion
-                        window.location.reload();
-                    })
-                    .catch((error) => {
-                        console.error('Error deleting data:', error);
-                        // Handle errors here
-                    });
+                const dataToSend1 = {
+                    [saveTariffReference1]: null
+                };
 
-                const cfunction = new CommonFuctions();
-                cfunction.isAnyMeterExist(findGroupChild)
-                    .then(childCount => {
-                        console.log('childCount1111111111111', childCount);
+                const dataToSend2 = {
+                    [saveTariffReference1]: null,
+                    [saveTariffReference]: null
+                };
 
-                        if (childCount == 0) {
-                            console.log('Deleting Firebase reference because childCount is 0');
-                            //cfunction.deleteFirebaseReference(findGroupChild);
-                            findGroupChild.remove().then(() => {
-                                // console.log("remove successfully");
-                            })
-                                .catch(() => {
 
-                                    console.log("Error deleting Firebase reference");
-                                });
-                        } else {
-                            console.log("Child count is greater than 0");
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error in isAnyMeterExist:', error);
-                    });
+                // Call the Firebase Cloud Function to delete the path from the Realtime Database
+                // try {
 
+                // const cfunction = new CommonFuctions();
+                // await cfunction.callWriteRtdbFunction(dataToSend);
+                //  await firebase.database().ref(deletePath).remove();
+                // console.log('Serial meter Save in11 :', result);
+
+
+                const childCount = await cfunction.isAnyMeterExist(findGroupChild)
+                // .then(childCount => {
+
+
+                if (childCount == 1) {
+
+                   // console.log('No Child Count ', childCount);
+
+                    try {
+
+                        const result = await cfunction.callWriteRtdbFunction(dataToSend1);
+                       /// console.log('Deleting Firebase reference because childCount is 0:', result);
+                        //cfunction.deleteFirebaseReference(findGroupChild);
+                        // findGroupChild.remove().then(() => {
+
+
+                        setIsDialogOpenSavedata(true)
+                        const errorMessage = `Remove data successfully!`;
+                        setmodalSaveMessage(errorMessage);
+                        setLoading(false);
+
+
+                    } catch (error) {
+
+                        setisResponseModel(true);
+                        // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                        const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry.(${error}). `;
+                        setmodalMessageResponse(errorMessage);
+                        setLoading(false);
+
+                    }
+
+
+                } else {
+
+                  ///  console.log("Serial are Available ");
+
+                    const cfunction = new CommonFuctions();
+
+                    try {
+
+
+                        await cfunction.callWriteRtdbFunction(dataToSend);
+
+                        setIsDialogOpenSavedata(true)
+                        const errorMessage = `Remove data successfully!`;
+                        setmodalSaveMessage(errorMessage);
+                        setLoading(false);
+
+                    } catch (error) {
+
+                        setisResponseModel(true);
+                        // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                        const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry.(${error}). `;
+                        setmodalMessageResponse(errorMessage);
+                        setLoading(false);
+
+                    }
+
+
+
+                }
+
+
+
+                // } catch (error) {
+
+                //     setisResponseModel(true);
+                //     // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                //     const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry.(${error}). `;
+                //     setmodalMessageResponse(errorMessage);
+                //     setLoading(false);
+
+                // }
+                //   firebase.database().ref(databasePath).remove()
+                // .then(() => {
+
+                // console.log('Data deleted successfully!');
+                // Add any additional logic you need after deleting
+                //  handleClose(); // Close the modal after successful deletion
+
+                // setIsDialogOpenSavedata(true)
+                // const errorMessage = `Remove data successfully!`;
+                // setmodalSaveMessage(errorMessage);
+                // setLoading(false);
+
+                // window.location.reload();
+                // })
+                // .catch((error) => {
+                //     //  console.error('Error deleting data:', error);
+                //     // Handle errors here
+                // });
+
+                //   const cfunction = new CommonFuctions();
+                // cfunction.isAnyMeterExist(findGroupChild)
+                //     .then(childCount => {
+                //         //  console.log('childCount1111111111111', childCount);
+
+                //         if (childCount == 0) {
+                //             //  console.log('Deleting Firebase reference because childCount is 0');
+                //             //cfunction.deleteFirebaseReference(findGroupChild);
+                //             findGroupChild.remove().then(() => {
+
+                //                 //    console.log("remove successfully");
+                //             })
+                //                 .catch(() => {
+
+                //                     // console.log("Error deleting Firebase reference");
+                //                 });
+                //         } else {
+                //             console.log("Child count is greater than 0");
+                //         }
+                //     })
+                //     .catch(error => {
+                //         console.error('Error in isAnyMeterExist:', error);
+                //     });
 
 
             } else {
-                console.log('Deletion canceled by user.');
-                // Handle cancellation or do nothing
+
+                alert("You have been logged-out due to log-in from another device.");
+                // console.log('you are logg out ');
+                handleLogout();
             }
 
-        } else {
+        } catch (error) {
 
-            alert("You have been logged-out due to log-in from another device.");
-            // console.log('you are logg out ');
-            handleLogout();
+            setisResponseModel(true);
+            // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+            const errorMessage = `Response not recieved  from server-S. Please check if transaction completed successfully, else retry. (${error}).`;
+            setmodalMessageResponse(errorMessage);
+            setLoading(false);
+
         }
-
 
 
     }
@@ -1236,7 +1441,7 @@ function Groupdetails() {
             history('/'); // Change '/login' to your login page route
         }).catch((error) => {
             // Handle any errors during logout
-            console.error('Error logging out:', error.message);
+          //  console.error('Error logging out:', error.message);
         })
     }
 
@@ -1265,7 +1470,6 @@ function Groupdetails() {
     }
 
     const [serialNumbersAndNames, setSerialNumbersAndNames] = useState([]);
-
 
     const handleGroupNameClick = (groupName) => {
         setSelectedGroupName(groupName);
@@ -1416,11 +1620,6 @@ function Groupdetails() {
 
         let isAnychange = isAnychangeGroupname(selectedGroupName, editGroupName, groupTariffRate, tariff);
         if (isAnychange) {
-            //    console.log(" Tariff Rate name  ", tariff);
-            //     console.log(" old Rate   ",  groupTariffRate);
-            //     console.log(" old group name   ", selectedGroupName);
-            //     console.log(" new group name ",  editGroupName);
-
             if (!editGroupName.trim()) {
                 setEnterGroupnameError("Cannot be empty.")
                 return;
@@ -1435,7 +1634,6 @@ function Groupdetails() {
                 return;
             }
 
-
             setLoading(true);
             const status = await cfunction.checkInternetConnection(); // Call the function
             //  setShowChecker(status);
@@ -1449,72 +1647,112 @@ function Groupdetails() {
                 //  return;
             }
 
-
-            // Add this line to format the tariff to two decimal places
-            const formattedTariff = parseFloat(tariff).toFixed(2);
-
-            let selectedsr = selectedGroupName.replace(/ /g, "_");
+            const storeSessionId = localStorage.getItem('sessionId');
             try {
-                const currentDataRef = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${selectedsr}/`);
-                const snapshot = await currentDataRef.once('value');
-                const data = snapshot.val();
-                console.log("data not come ", data);
-                if (!data) {
-                    console.log('Selected group not found in the database');
-                    return;
-                }
+                const { sessionId } = await cfunction.HandleValidatSessiontime(numberPart);
+                if (storeSessionId === sessionId) {
+                    // Add this line to format the tariff to two decimal places
+                    const formattedTariff = parseFloat(tariff).toFixed(2);
+                    let selectedsr = selectedGroupName.replace(/ /g, "_");
+                    const currentDataRef = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${selectedsr}/`);
+                    const snapshot = await currentDataRef.once('value');
+                    const data = snapshot.val();
+                    // console.log("data not come ", data);
+                    if (!data) {
+                        ///   console.log('Selected group not found in the database');
+                        return;
+                    }
 
-                const formattedGroupName = (editGroupName || selectedGroupName).split(' ').join('_');
-                const newDataRef = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/`);
-                // Conditionally update the group name and tariff rate
-                if (editGroupName && formattedGroupName) {
-                    // data.groupName = groupName;
-                }
+                    const formattedGroupName = (editGroupName || selectedGroupName).split(' ').join('_');
+                    const newDataRef = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/`);
 
-                for (const serialKey in data) {
-                    if (Object.hasOwnProperty.call(data, serialKey)) {
-                        const serialData = data[serialKey];
-                        if (serialData && typeof serialData === 'object' && serialData.serial) {
-                            // Check if the serial has a tariff property and update it
-                            if (serialData.tariff !== undefined && serialData.tariff !== formattedTariff) {
-                                serialData.tariff = formattedTariff;
+
+                    const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+                    const adminRootReference = ref(db, `/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/`);
+                    const fullAdminProfilePath = adminRootReference.toString();
+
+
+                    // Conditionally update the group name and tariff rate
+                    if (editGroupName && formattedGroupName) {
+                        // data.groupName = groupName;
+                    }
+                    for (const serialKey in data) {
+                        if (Object.hasOwnProperty.call(data, serialKey)) {
+                            const serialData = data[serialKey];
+                            if (serialData && typeof serialData === 'object' && serialData.serial) {
+                                // Check if the serial has a tariff property and update it
+                                if (serialData.tariff !== undefined && serialData.tariff !== formattedTariff) {
+                                    serialData.tariff = formattedTariff;
+                                }
                             }
                         }
                     }
+                    // Update grouptariff if it's different
+                    if (data.grouptariff !== undefined && data.grouptariff !== formattedTariff) {
+                        data.grouptariff = formattedTariff;
+                    }
+
+                    if (formattedTariff !== undefined && formattedTariff !== data.tariff) {
+                        data.tariff = formattedTariff;
+                    }
+
+                    // Write data to the new parent
+
+                    const dataToSend = {
+                        [fullAdminProfilePath]: data
+                    };
+
+                    ///   await newDataRef.set(data);
+
+                    try {
+                        const result = await cfunction.callWriteRtdbFunction(dataToSend);
+                        console.log('update Data groupdat and tariff  :', result);
+
+                    } catch (error) {
+                        setisResponseModel(true);
+                        // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                        const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry. (${error}).`;
+                        setmodalMessageResponse(errorMessage);
+                        setLoading(false);
+
+                    }
+
+                    // Delete data from the current parent if the group name has changed
+                    if (editGroupName && editGroupName !== selectedGroupName) {
+                        await currentDataRef.remove();
+                    }
+
+                    //  console.log('Item updated successfully!');
+
+                    setIsDialogOpenSavedata(true)
+                    const errorMessage = `Data saved successfully!`;
+
+                    setmodalSaveMessage(errorMessage);
+                    setLoading(false);
+
+                    // alert('Data save successfully ');
+                    //  window.location.reload(true);
+
+                } else {
+                    alert("You have been logged-out due to log-in from another device.");
+                    handleLogout();
                 }
-                // Update grouptariff if it's different
-                if (data.grouptariff !== undefined && data.grouptariff !== formattedTariff) {
-                    data.grouptariff = formattedTariff;
-                }
-
-                if (formattedTariff !== undefined && formattedTariff !== data.tariff) {
-                    data.tariff = formattedTariff;
-                }
-
-                // Write data to the new parent
-                await newDataRef.set(data);
-
-                // Delete data from the current parent if the group name has changed
-                if (editGroupName && editGroupName !== selectedGroupName) {
-                    await currentDataRef.remove();
-                }
-
-                //  console.log('Item updated successfully!');
-                alert('Data save successfully ');
-                window.location.reload(true);
-
-            } catch (e) {
-
-                console.log("error from save detials :", e);
             }
+            catch (error) {
 
+                // setIsDialogOpenSavedata(true);
+                setisResponseModel(true);
+                // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                const errorMessage = `Response not recieved  from server-S. Please check if transaction completed successfully, else retry. (${error}).`;
+                setmodalMessageResponse(errorMessage);
+                setLoading(false);
+
+            }
         } else {
-
-
             setIsDialogOpen(true);
             const errorMessage = `No changes in existing data.`;
             setmodalMessage(errorMessage);
-             //setLoading(false);
+            setLoading(false);
 
 
             // alert('No change in existing data. ');
@@ -1523,13 +1761,20 @@ function Groupdetails() {
     }
 
 
+    const handleDeleteGroupname = () => {
 
-    const handleDeleteGroupname = async () => {
+        setmodalMessage(`Are you sure you want to delete this data?`);
+        setisConfirmedgroup(true);
+
+    }
+
+
+    const handleDeleteGroup = async () => {
         //  console.log('groupname ', editGroupName);
+
+        // setLoading(true);
         const formattedGroupName = (editGroupName || selectedGroupName).split(' ').join('_');
 
-
-        setLoading(true);
         const status = await cfunction.checkInternetConnection(); // Call the function
         //  setShowChecker(status);
         if (status === 'Poor connection.') {
@@ -1542,14 +1787,17 @@ function Groupdetails() {
             //  return;
         }
 
-
-
         const storeSessionId = localStorage.getItem('sessionId');
         try {
             const { sessionId } = await cfunction.HandleValidatSessiontime(numberPart);
             if (storeSessionId === sessionId) {
 
                 const newDataRef = database.ref(`/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/`);
+
+
+                const tariffRef = firebase.database().ref(`/adminRootReference/tenantDetails/${numberPart}/${formattedGroupName}/`);
+                const saveTariffReference = tariffRef.toString();
+
                 const snapshot = await newDataRef.once('value');
                 const data = snapshot.val();
                 //  console.log('Data before deletion: ', data);
@@ -1559,14 +1807,48 @@ function Groupdetails() {
                     if (keys.length === 0) {
                         // If no keys other than 'time', delete the group name
                         await newDataRef.remove();
-                        //  console.log(`Group ${formattedGroupName} deleted successfully.`);
+                        //   console.log(`Group ${formattedGroupName} deleted successfully.`);
                     } else {
                         //  console.log(`Group ${formattedGroupName} has keys other than 'time', checking for serial numbers.`);
                         const serialNumbers = keys.filter(key => key !== 'tariff'); // Exclude 'tariff' key if needed
                         if (serialNumbers.length === 0) {
-                            await newDataRef.remove();
-                            alert(`Group ${formattedGroupName} deleted successfully as it has no serial numbers.`);
-                            window.location.reload();
+
+
+                            // Create an object with the path to delete and set its value to null
+                            const dataToSend = {
+                                [saveTariffReference]: null
+                            };
+
+
+                            try {
+                                const result = await cfunction.callWriteRtdbFunction(dataToSend);
+                                console.log('update Data groupdat and tariff  :', result);
+
+                                setIsDialogOpenSavedata(true)
+                                const errorMessage = `Group ${formattedGroupName} deleted successfully as it has no serial numbers.`;
+                                setmodalSaveMessage(errorMessage);
+                                setLoading(false);
+
+
+                            } catch (error) {
+                                setisResponseModel(true);
+                                // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
+                                const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry. (${error}).`;
+                                setmodalMessageResponse(errorMessage);
+                                setLoading(false);
+
+                            }
+
+
+
+
+
+                            //  await newDataRef.remove();
+
+
+
+                            /// alert(`Group ${formattedGroupName} deleted successfully as it has no serial numbers.`);
+                            /// window.location.reload();
 
                         } else {
                             // alert(`Group ${formattedGroupName} has ${serialNumbers.length} serial numbers, not deleting.`);
@@ -1581,11 +1863,8 @@ function Groupdetails() {
                         }
                     }
                 } else {
-                    console.log(`Group ${formattedGroupName} not found.`);
+                    /// console.log(`Group ${formattedGroupName} not found.`);
                 }
-
-
-
             } else {
 
 
@@ -1595,12 +1874,11 @@ function Groupdetails() {
 
         }
         catch (error) {
-
-            setIsDialogOpenSavedata(true);
-            setIsDialogOpen(true);
+            // setIsDialogOpenSavedata(true);
+            setisResponseModel(true);
             // const errorMessage = `Response not recieved  from server-A. (${error}). Please check if transaction completed successfully , else retry. `;
-            const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
-            setmodalMessage(errorMessage);
+            const errorMessage = `Response not recieved  from server-S. Please check if transaction completed successfully, else retry. (${error})`;
+            setmodalMessageResponse(errorMessage);
             setLoading(false);
 
         }
@@ -1608,13 +1886,26 @@ function Groupdetails() {
 
 
     const [modalMessage, setmodalMessage] = useState('');
+    const [modalSaveMessage, setmodalSaveMessage] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-
 
     const closeDialog = () => {
         setIsDialogOpen(false);
-        // window.location.reload(); // This will reload the page
+        //  window.location.reload(); // This will reload the page
     };
+
+
+
+
+    const [modalMessageResponse, setmodalMessageResponse] = useState('');
+    const [isResponseModel, setisResponseModel] = useState(false);
+
+    const closeResponse = () => {
+        setisResponseModel(false);
+        setModalIsOpen(false);
+        window.location.reload();
+    };
+
 
     const [isDialogOpenSavedata, setIsDialogOpenSavedata] = useState(false);
 
@@ -1633,11 +1924,29 @@ function Groupdetails() {
 
     const isConfirmedYes = () => {
 
-        
+        setisConfirmed(false);
+        deleteGroupname();
+        setLoading(true);
+
     }
 
     const closeisConfirmed = () => {
         setisConfirmed(false);
+    };
+
+    const [isConfirmedgroup, setisConfirmedgroup] = useState(false);
+
+
+    const isConfirmedYesgroup = () => {
+        setisConfirmedgroup(false);
+        handleDeleteGroup();
+        setLoading(true);
+
+
+    }
+
+    const closeisConfirmedgroup = () => {
+        setisConfirmedgroup(false);
     };
 
 
@@ -1647,6 +1956,27 @@ function Groupdetails() {
 
     return (
         <>
+
+
+            {loading ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>
+            ) : null}
+
             <div style={{ marginLeft: '16%' }}>
 
                 {/* <div>
@@ -1698,8 +2028,9 @@ function Groupdetails() {
                         <Modal show={modalIsOpendata} onHide={handleClosed}
                             size="lg"
 
+
                             backdrop="static">
-                            <Modal.Header closeButton>
+                            <Modal.Header closeButton={!loading}>
                                 <Modal.Title>Edit Details</Modal.Title>
                             </Modal.Header>
                             <Modal.Body>
@@ -1805,17 +2136,18 @@ function Groupdetails() {
                         </div>
                     </div>
                 ))}
-            </div >
+            </div>
 
-
-
-            {loading ? (
+            {/* {loading ? (
                 <div style={{ position: 'fixed', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: '9999' }}>
                     <div className="spinner-border text-danger" role="status">
                         <span className="sr-only">Loading...</span>
                     </div>
                 </div>
-            ) : null}
+            ) : null} */}
+
+
+
 
             <Modal show={modalIsOpen} onHide={handleClose} backdrop="static">
                 <Modal.Header closeButton>
@@ -2111,7 +2443,7 @@ function Groupdetails() {
                 <Modal.Footer>
                     <div className="d-flex justify-content-center w-100">
                         <Button onClick={handleSavebutton} disabled={loading} style={{ marginRight: '20px' }}>Update</Button>
-                        <Button className="btn btn-danger" disabled={loading} onClick={handleDelete}>Delete</Button>
+                        <Button className="btn btn-danger" disabled={loading} onClick={handleDelete}>Delete1111</Button>
                     </div>
                 </Modal.Footer>
             </Modal>
@@ -2132,11 +2464,25 @@ function Groupdetails() {
 
 
 
+            <Modal show={isResponseModel} onHide={closeResponse} backdrop="static" style={{ marginTop: '3%' }}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p style={{ color: 'red' }}> {modalMessageResponse}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={closeResponse}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+
             <Modal show={isDialogOpenSavedata} onHide={closeDialogSavedata} backdrop="static" style={{ marginTop: '3%' }}>
                 {/* <Modal.Header closeButton>
       </Modal.Header>  */}
                 <Modal.Body>
-                    <p> {modalMessage}</p>
+                    <p> {modalSaveMessage}</p>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="primary" onClick={closeDialogSavedata}>
@@ -2159,6 +2505,25 @@ function Groupdetails() {
                     </Button>
 
                     <Button variant="primary" onClick={closeisConfirmed}>
+                        No
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+
+
+            <Modal show={isConfirmedgroup} onHide={closeisConfirmedgroup} disabled={loading} backdrop="static" style={{ marginTop: '3%' }}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p> Are you sure want to deleted this group name </p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={isConfirmedYesgroup}>
+                        YES
+                    </Button>
+
+                    <Button variant="primary" onClick={closeisConfirmedgroup}>
                         No
                     </Button>
                 </Modal.Footer>

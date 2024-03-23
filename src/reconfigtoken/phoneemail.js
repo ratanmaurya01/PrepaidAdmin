@@ -20,6 +20,8 @@ function Phoneemail() {
   const location = useLocation();
   const [phoneNumber, setPhoneNumber] = useState('');
   const { enteredPhoneNumberModal } = location.state || {};
+  const [alertMessage, setAlertMessage] = useState('');
+  const [loading, setLoading] = useState(true);
 
 
   const { enteredPasswordModal } = location.state || {};
@@ -43,6 +45,7 @@ function Phoneemail() {
           const numberPart = emailParts[0];
           // console.log("Number", numberPart);
           setPhoneNumber(numberPart);
+          setLoading(false);
         }
       } else {
         setUser(null);
@@ -55,15 +58,36 @@ function Phoneemail() {
   }, []);
 
 
-  const handleGetOTP = () => {
+  const handleGetOTP = async () => {
     //  console.log('phone number 1212: ', enteredPhoneNumberModal);
-    const phoneSendOtp = new PhoneSendOtp(enteredPhoneNumberModal);
-    phoneSendOtp.sendOTP(enteredPhoneNumberModal);
+    // const phoneSendOtp = new PhoneSendOtp(enteredPhoneNumberModal);
+    // phoneSendOtp.sendOTP(enteredPhoneNumberModal);
+
+    try {
+      const phoneSendOtp = new PhoneSendOtp(enteredPhoneNumberModal);
+      const result = await phoneSendOtp.sendOTP(enteredPhoneNumberModal);
+      if (result === 411) {
+        setAlertMessage(`Invalid number : (${result})`);
+        setLoading(false);
+      } else {
+
+        navigate('/phoneemailotpverify', { state: { enteredPhoneNumberModal, enteredPasswordModal } });
+
+
+
+        //  navigate('/verifunumber', { state: { newPhone, newName, newAddress, newEmail } });
+      }
+    } catch (otpError) {
+    }
+
+
 
   };
 
   const handleButtonClick1 = async (event) => {
 
+    setAlertMessage('');
+    setLoading(true);
     const storeSessionId = localStorage.getItem('sessionId');
     const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
     if (storeSessionId === sessionId) {
@@ -73,7 +97,7 @@ function Phoneemail() {
       event.preventDefault();
       handleButtonClick(event);
       handleGetOTP();
-      navigate('/phoneemailotpverify', { state: { enteredPhoneNumberModal, enteredPasswordModal } });
+      // navigate('/phoneemailotpverify', { state: { enteredPhoneNumberModal, enteredPasswordModal } });
 
 
     } else {
@@ -133,11 +157,31 @@ function Phoneemail() {
 
     <>
 
-    <div>
+      <div>
 
-    <Navbar />
+        <Navbar />
 
-    </div>
+
+        {loading ? (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: '9999'
+          }}>
+            <div className="spinner-border text-danger" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        ) : null}
+
+      </div>
       <div className='containers'>
         <div className='formgroup'>
           {/* <div>
@@ -177,6 +221,13 @@ function Phoneemail() {
               />
               <i class="fa-solid fa-envelope"></i>
             </div>
+
+            {alertMessage && (
+              <div className="alert-container">
+                <p style={{ color: 'red' }}><i className="fas fa-exclamation-circle" style={{ color: 'red' }}></i> {alertMessage}</p>
+              </div>
+            )}
+
           </div>
           <div className='d-grid col-5'>
             <button className='btn btn-primary' onClick={handleButtonClick1}  >GET OTP</button>

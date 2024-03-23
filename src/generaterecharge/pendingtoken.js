@@ -65,64 +65,99 @@ class Pendingtoken {
     }
   };
 
-
-  async fetchLastReachergeTime(srNumber) {
-    const db = getDatabase(); // Assuming getDatabase is defined elsewhere
-    const adminRootReference = ref(db, `adminRootReference/meterDetails/${srNumber}/rechargeToken`);
-    const path = adminRootReference.toString();
-    const data = await this.callCloudFunction(path);
-    const parsedData = JSON.parse(data);
-    const keys = Object.keys(parsedData);
-    // Exclude keys "time" and "tokenCount" from consideration
-    const filteredKeys = keys.filter(key => key !== 'time' && key !== 'tokenCount');
-    // Get the last key from the filtered keys array
-    const lastKey = filteredKeys[filteredKeys.length - 1];
-
-    // console.log('RechargeAmount :',parsedData[lastKey].rechargeAmount);
-    // Print the last key
-    const trimmedKey = lastKey.split("-")[0];
-    /// console.log('last TimeStamp :' , trimmedKey);
-    const lastTimestamp = parseInt(trimmedKey);
-    const currentTimestamp = await this.fireabseServerTimestamp();
-  
-
-    const differenceInSeconds = (currentTimestamp - lastTimestamp) / 1000;
-
-   
-    const within1Minut = differenceInSeconds <= 60;
-
-
-    // if (differenceInSeconds < 60) {
-    //   console.log("You are within one minute.");
-    // } else {
-    //   console.log("You are out of one minute.");
-    // }
-
-    // Calculate the difference in milliseconds
-    const difference = currentTimestamp - lastTimestamp;
-    // Convert milliseconds to hours
-    const hoursDifference = difference / (1000 * 60 * 60);
-    // Check if within 24 hours
-
-   const within24Hours = hoursDifference <= 24;
-
-    return {
-      rechargeAmount: parsedData[lastKey].rechargeAmount,
-      tariffRate: parsedData[lastKey].tariffRate,
-      tokenGenerationTime: parsedData[lastKey].tokenGenerationTime,
-      within24Hours: within24Hours,
-      within1Minut: within1Minut,
+    // issues in first when Generate first REcharge
+    async fetchLastReachergeTime(srNumber) {
+      const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+      const adminRootReference = ref(db, `adminRootReference/meterDetails/${srNumber}/rechargeToken`);
+      const path = adminRootReference.toString();
+      const data = await this.callCloudFunction(path);
+      const parsedData = JSON.parse(data);
+      const keys = Object.keys(parsedData);
+      // Exclude keys "time" and "tokenCount" from consideration
+      const filteredKeys = keys.filter(key => key !== 'time' && key !== 'tokenCount');
+      // Check if there are any filtered keys
+      if (filteredKeys.length > 0) {
+        // Get the last key from the filtered keys array
+        const lastKey = filteredKeys[filteredKeys.length - 1];
+        // Check if lastKey is not undefined
+        if (lastKey) {
+          // console.log('RechargeAmount :',parsedData[lastKey].rechargeAmount);
+          // Print the last key
+          const trimmedKey = lastKey.split("-")[0];
+          /// console.log('last TimeStamp :' , trimmedKey);
+          const lastTimestamp = parseInt(trimmedKey);
+          const currentTimestamp = await this.fireabseServerTimestamp();
+    
+          const differenceInSeconds = (currentTimestamp - lastTimestamp) / 1000;
+          const within1Minut = differenceInSeconds <= 60;
+    
+          // Calculate the difference in milliseconds
+          const difference = currentTimestamp - lastTimestamp;
+          // Convert milliseconds to hours
+          const hoursDifference = difference / (1000 * 60 * 60);
+          // Check if within 24 hours
+          const within24Hours = hoursDifference <= 24;
+    
+          return {
+            rechargeAmount: parsedData[lastKey].rechargeAmount,
+            tariffRate: parsedData[lastKey].tariffRate,
+            tokenGenerationTime: parsedData[lastKey].tokenGenerationTime,
+            within24Hours: within24Hours,
+            within1Minut: within1Minut,
+          };
+        } else {
+          // Handle case where lastKey is undefined
+          console.error('Last key is undefined.');
+          return null; // or throw an error, depending on your logic
+        }
+      } else {
+        // Handle case where there are no filtered keys
+       // console.error('No filtered keys found.');
+        return null; // or throw an error, depending on your logic
+      }
+    }
      
-    };
+  // async fetchLastReachergeTime(srNumber) {
+  //   const db = getDatabase(); // Assuming getDatabase is defined elsewhere
+  //   const adminRootReference = ref(db, `adminRootReference/meterDetails/${srNumber}/rechargeToken`);
+  //   const path = adminRootReference.toString();
+  //   const data = await this.callCloudFunction(path);
+  //   const parsedData = JSON.parse(data);
+  //   const keys = Object.keys(parsedData);
+  //   // Exclude keys "time" and "tokenCount" from consideration
+  //   const filteredKeys = keys.filter(key => key !== 'time' && key !== 'tokenCount');
+  //   // Get the last key from the filtered keys array
+  //   const lastKey = filteredKeys[filteredKeys.length - 1];
+  //   // console.log('RechargeAmount :',parsedData[lastKey].rechargeAmount);
+  //   // Print the last key
+  //   const trimmedKey = lastKey.split("-")[0];
+  //   /// console.log('last TimeStamp :' , trimmedKey);
+  //   const lastTimestamp = parseInt(trimmedKey);
+  //   const currentTimestamp = await this.fireabseServerTimestamp();
 
-    // if (hoursDifference <= 24) {
-    //     console.log('Last recharge within 24 hours.');
+  //   const differenceInSeconds = (currentTimestamp - lastTimestamp) / 1000;
+  //   const within1Minut = differenceInSeconds <= 60;
 
-    // } else {
-    //     console.log('Last recharge is more than 24 hours ago.');   
-    // }
 
-  }
+  //   // Calculate the difference in milliseconds
+  //   const difference = currentTimestamp - lastTimestamp;
+  //   // Convert milliseconds to hours
+  //   const hoursDifference = difference / (1000 * 60 * 60);
+  //   // Check if within 24 hours
+
+  //  const within24Hours = hoursDifference <= 24;
+
+  //   return {
+  //     rechargeAmount: parsedData[lastKey].rechargeAmount,
+  //     tariffRate: parsedData[lastKey].tariffRate,
+  //     tokenGenerationTime: parsedData[lastKey].tokenGenerationTime,
+  //     within24Hours: within24Hours,
+  //     within1Minut: within1Minut,
+     
+  //   };
+
+
+  // }
 
   async viewPedingToken(srNumber) {
     try {

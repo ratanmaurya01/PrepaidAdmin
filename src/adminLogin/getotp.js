@@ -8,6 +8,8 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'; // Impo
 
 import './login.css';
 import { useNavigate } from 'react-router-dom';
+import Mainhomepage from '../home/mainhomepage'
+import CommonFuctions from '../commonfunction';
 
 function Getotp() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ function Getotp() {
   const [customEmail, setCustomEmail] = useState(''); // Declare customEmail state
   const [mobileOTPError, setMobileOTPError] = useState('');
   const [emailOTPError, setEmailOTPError] = useState('');
+  const SessionTime =new CommonFuctions();
 
   useEffect(() => {
     const storedPhone = localStorage.getItem('phoneNumber');
@@ -149,13 +152,18 @@ function Getotp() {
               // Add other fields as needed
             };
             await set(ref(database, adminProfilePath), userData);
-            const sessionPath = `adminRootReference/adminDetails/${storedPhoneNumber}/sessionData`;
-            const timestampData = {
-              lastActive: Date.now().toString(), // Saving current timestamp
-              sessionId: Date.now().toString(), // Unique session ID, for example
-              // Add other timestamp-related fields as needed
-            };
-            await set(ref(database, sessionPath), timestampData);
+            // const sessionPath = `adminRootReference/adminDetails/${storedPhoneNumber}/sessionData`;
+            // const timestampData = {
+            //   lastActive: Date.now().toString(), // Saving current timestamp
+            //   sessionId: Date.now().toString(), // Unique session ID, for example
+            //   // Add other timestamp-related fields as needed
+            // };
+            // await set(ref(database, sessionPath), timestampData);
+
+            const sessionId   = await SessionTime.updateSessionTimeInLogIn(storedPhoneNumber);
+
+            //  console.log("Sessdion Id :", sessionId);
+              localStorage.setItem('sessionId', sessionId); 
             alert('Account created successfully!');
             navigate('/welcome');
           } catch (error) {
@@ -197,6 +205,12 @@ function Getotp() {
 
   return (
     <>
+     
+
+         <div>
+                <Mainhomepage />
+            </div>
+
       <div className='containers'>
         <form className='formgroup' onSubmit={handleSubmit}>
           {/* <div>

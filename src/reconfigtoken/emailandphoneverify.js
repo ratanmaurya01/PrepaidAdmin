@@ -9,14 +9,9 @@ import 'firebase/compat/firestore';
 import Generatetoken from './generatetokenkey';
 import CommonFuctions from '../commonfunction';
 import Navbar from '../adminLogin/navbar';
-
-
+import { Modal, Button } from 'react-bootstrap';
 
 const allSerialNo = [];
-
-
-
-
 
 function Phoneandenailverify() {
 
@@ -33,7 +28,16 @@ function Phoneandenailverify() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [adminKey, setAdminKey] = useState('');
- // const [timeStamp, setTimeStamp] = useState('');
+  // const [timeStamp, setTimeStamp] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const [modalMessage, setModalMessage] = useState('');
+
+  const [modalMessageResponse, setModalMessageResponse] = useState('');
+
+
+
+
 
   const location = useLocation();
   const mainFunction = new Generatetoken();
@@ -49,9 +53,13 @@ function Phoneandenailverify() {
         const emailParts = authUser.email.split('@'); // Split email by '@'
         if (emailParts.length === 2) {
           const number = emailParts[0]; // Get the part before '@'
-          console.log("Extracted number:", number);
+          //  console.log("Extracted number:", number);
           setPhoneNumber(number);
           getAdminPassword(number);
+          fetchdata(number);
+          fetchTennetDAta(number);
+
+          setLoading(false);
         }
       } else {
         // No user is logged in, you can redirect to another page or handle accordingly
@@ -70,40 +78,92 @@ function Phoneandenailverify() {
 
   const handleOnSubmit = async () => {
 
+
+
     const storedPhoneOTP = localStorage.getItem('otp'); // Get stored phone OTP
     const storedEmailOTP = localStorage.getItem('emailOTP'); // Get stored email OTP
+
+    if (mobileOTP !== storedPhoneOTP) {
+      setMobileOTPError('Invalid mobile OTP');
+    } else if (emailOTP !== storedEmailOTP) {
+      setEmailOTPError('Invalid email OTP');
+    } else {
+      // Both OTPs are valid, proceed with the submission
+      // You can also reset any existing errors here, if needed
+      setMobileOTPError('');
+      setEmailOTPError('');
+
+      // Proceed with the submission
+    }
+
     if (mobileOTP === storedPhoneOTP && emailOTP === storedEmailOTP) {
-      console.log('Admin phone number ', phoneNumber);
-      console.log('new Phone  ', enteredPhoneNumberModal);
 
-      handleUpdateAdminDetails();
+      setLoading(true);
+      const status = await SessionTime.checkInternetConnection(); // Call the function
+      if (status === 'Poor connection.') {
+        setIsDialogOpen(true);
+        setModalMessage('No/Poor Internet connection , Please retry.');
+        setLoading(false);
+        // alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+        return;
+      }
 
-      handleUpdateCommon();
+      const storeSessionId = localStorage.getItem('sessionId');
+      try {
+        const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
+        if (storeSessionId === sessionId) {
+          // console.log('Admin phone number ', phoneNumber);
+          // console.log('new Phone  ', enteredPhoneNumberModal);
+          ///   handleUpdateAdminDetails();
+          ///  handleUpdateCommon();
+          //  handleUpdateEmailInFirebase();
+          //  handleUpdatetennent();
 
-      handleUpdateEmailInFirebase();
+          handlePhoneSerialList();
+          //  handleMeterList();
+          //  generateToken();
 
-      handleUpdatetennent();
 
-      handlePhoneSerialList();
+        } else {
 
-      handleMeterList();
+         // alert("Cannot login. Another session is active. Please retry after sometime. ");
+         // handleLogout();
+        }
 
-      generateToken();
+      } catch (error) {
+        setLoading(false);
+        setIsDialogOpenResponse(true);
+        const errorMessage = `Response not recieved  from server-S. (${error}). Please check if transaction completed successfully , else retry.`;
+        setModalMessageResponse(errorMessage);
 
-      // navigate('/wel');
+      }
+
     } else {
       // OTPs do not match, set error messages or handle accordingly
-      if (mobileOTP !== storedPhoneOTP) {
-        setMobileOTPError('Invalid mobile OTP');
-      }
-      if (emailOTP !== storedEmailOTP) {
-        setEmailOTPError('Invalid email OTP');
-      }
+      // if (mobileOTP !== storedPhoneOTP) {
+      //   setMobileOTPError('Invalid mobile OTP');
+      //   return;
+      // }
+      // if (emailOTP !== storedEmailOTP) {
+      //   setEmailOTPError('Invalid email OTP');
+      //   return;
+      // }
     }
+
+
 
   };
 
-  const getAdminPassword = (numberPart) => {
+  const getAdminPassword = async (numberPart) => {
+    const status = await SessionTime.checkInternetConnection(); // Call the function
+    if (status === 'Poor connection.') {
+      setIsDialogOpen(true);
+      setModalMessage('No/Poor Internet connection , Please retry.');
+      setLoading(false);
+      // alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+      return;
+    }
+
     const passwordRef = database.ref(`/adminRootReference/adminDetails/${numberPart}/adminProfile`);
 
     passwordRef.once('value', (snapshot) => {
@@ -116,6 +176,36 @@ function Phoneandenailverify() {
 
     });
   };
+
+
+
+  const [parsedData, setParsedData] = useState('');
+  const fetchdata = async (number) => {
+
+    const FetchAdmin = firebase.database().ref(`adminRootReference/adminDetails/${number}`);
+    const Admindetialsref = FetchAdmin.toString();
+    try {
+      const result = await SessionTime.callCloudFunction(Admindetialsref);
+      const parsedData = JSON.parse(result);
+      setParsedData(parsedData);
+    } catch (error) {
+      //   console.log('Data Not fect from FDB');
+    }
+  }
+
+  const [tenantDetails, setTennentDetials] = useState('');
+
+  const fetchTennetDAta = async (number) => {
+
+    const Fetchtennentdetails = firebase.database().ref(`adminRootReference/tenantDetails/${number}`);
+    const snapshot = await Fetchtennentdetails.once('value');
+    const tenantDetails = snapshot.val();
+
+    setTennentDetials(tenantDetails);
+
+  }
+
+
 
 
 
@@ -163,7 +253,7 @@ function Phoneandenailverify() {
       // Step 3: Remove data from the old key
       await oldAdinDetialspath.remove();
 
-     // console.log('Key updated successfully');
+      // console.log('Key updated successfully');
 
 
 
@@ -190,7 +280,7 @@ function Phoneandenailverify() {
         return oldDataRef.remove();
       })
       .then(() => {
-       console.log('Key updated successfully');
+        console.log('Key updated successfully');
       })
       .catch(error => {
         console.error('Error updating key:', error);
@@ -236,7 +326,19 @@ function Phoneandenailverify() {
 
 
   const handlePhoneSerialList = async () => {
-    console.log("Admin Log in Phone number  for handlePhoneSerialList ", phoneNumber);
+
+    setLoading(true);
+    const status = await SessionTime.checkInternetConnection(); // Call the function
+    if (status === 'Poor connection.') {
+      setIsDialogOpen(true);
+      setModalMessage('No/Poor Internet connection , Please retry.');
+      setLoading(false);
+      // alert('No/Poor Internet connection , Please retry.'); // Display the "Poor connection" message in an alert
+      return;
+    }
+
+
+    // console.log("Admin Log in Phone number  for handlePhoneSerialList ", phoneNumber);
     try {
       const newAdinDetialspath = database.ref(`adminRootReference/adminDetails/${phoneNumber}/meterList`);
       const snapshot = await newAdinDetialspath.once('value');
@@ -279,13 +381,12 @@ function Phoneandenailverify() {
         }, {});
 
       console.log('Serial Numbe data ', filteredSerialData);
-
       for (const serial in filteredSerialData) {
         const meterPath = database.ref(`/common/meterList/${serial}`);
         await meterPath.update({ phoneNo: enteredPhoneNumberModal }); // Replace 'NEW_PHONE_NUMBER' with the actual phone number you want to set
       }
 
-      console.log('Phone numbers updated successfully.');
+      // console.log('Phone numbers updated successfully.');
       //  handleLogout();
 
     } catch (error) {
@@ -300,15 +401,15 @@ function Phoneandenailverify() {
 
     try {
       const mytime = await mainFunction.fireabseServerTimestamp();
-    //   const mytime = await mainFunction.serverTimeFirebase();
-    //  console.log("It Is ServerTiem ", mytime);
-    //  setTimeStamp(mytime);
+      //   const mytime = await mainFunction.serverTimeFirebase();
+      //  console.log("It Is ServerTiem ", mytime);
+      //  setTimeStamp(mytime);
 
       let type = '04';
       //  console.log("servertime",allSerialNo.length);
 
       for (let i = 0; i < allSerialNo.length; i++) {
-        const phoneReconfigToken = mainFunction.tokenKey( mytime,type, enteredPhoneNumberModal, allSerialNo[i], password, adminKey);
+        const phoneReconfigToken = mainFunction.tokenKey(mytime, type, enteredPhoneNumberModal, allSerialNo[i], password, adminKey);
 
         console.log("Token Hex for reconfig :  ", phoneReconfigToken);
 
@@ -321,37 +422,113 @@ function Phoneandenailverify() {
     }
   };
 
-  
+
   const updateMeterDetailsOnFirebase = async (serialNumber, token, serverTime) => {
-           
-  //  console.log("servertime ", serverTime);
 
+   
+    console.log('Session validate Pending ',);
+
+
+    const storeSessionId = localStorage.getItem('sessionId');
     try {
-      const meterDetailsPath = `adminRootReference/meterDetails/${serialNumber}/reConfigToken`;
+      const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
+      if (storeSessionId === sessionId) {
 
-      await firebase.database().ref(meterDetailsPath).update({
-        isTransfer: "false",
-        token: token,
-        tokenGeneratedTime: serverTime,
-        tokenUsedTime: 'null',
-        transferPhoneNumber: 'null',
+  
+        console.log('Session Validate OK:',);
 
-      });
 
-      console.log(`Updated reConfigToken for meter`);
+        const updateToken = {
+          [serialNumber]: {
+            isTransfer: "false",
+            token: token,
+            tokenGeneratedTime: serverTime,
+            tokenUsedTime: "null", // Use null instead of 'null'
+            transferPhoneNumber: "null", // Use null instead of 'null'  
+          }
+        };
+ 
+ 
+        const updatedAdminProfile = {
+          ...parsedData.adminProfile,
+          phoneNo: newPhoneNumber,
+        };
+
+
+        const adminDetails = {
+          ...parsedData,
+          adminProfile: updatedAdminProfile,
+        };
+
+        const data = {
+          tokenDetails: updateToken,
+          adminDetails: adminDetails,
+          tenantDetails: tenantDetails
+        };
+
+        console.log('Update data in databse  :' ,data);
+
+        try {
+          await SessionTime.callReconfigToken(data);
+
+          // console.log('Update Succesffullyyy ');
+          setLoading(false);
+          setIsDialogOpenLogout(true);
+          const errorMessage = ` Mobile Number has been change . You Logout `;
+          setModalMessageLogout(errorMessage);
+
+        }
+        catch (error) {
+
+          setLoading(false);
+          setIsDialogOpenResponse(true);
+          const errorMessage = `Response not recieved  from server-A. Please check if transaction completed successfully, else retry. (${error}).`;
+          setModalMessageResponse(errorMessage);
+        }
+
+
+
+      } else {
+        // alert("You have been logged-out due to log-in from another device.");
+        /// console.log('you are logg out ');
+        // handleLogout();
+      }
+
+
     } catch (error) {
-      console.error('Error updating reConfigToken fields:', error);
+      setLoading(false);
+      setIsDialogOpenResponse(true);
+      const errorMessage = `Response not recieved  from server-S. Please check if transaction completed successfully, else retry. (${error}).`;
+      setModalMessageResponse(errorMessage);
+
     }
+
+
+
+    // try {
+    //   const meterDetailsPath = `adminRootReference/meterDetails/${serialNumber}/reConfigToken`;
+
+    //   await firebase.database().ref(meterDetailsPath).update({
+    //     isTransfer: "false",
+    //     token: token,
+    //     tokenGeneratedTime: serverTime,
+    //     tokenUsedTime: 'null',
+    //     transferPhoneNumber: 'null',
+
+    //   });
+
+    //   console.log(`Updated reConfigToken for meter`);
+    // } catch (error) {
+    //   console.error('Error updating reConfigToken fields:', error);
+    // }
+
   };
-
-
-
 
 
   const handleUpdatetennent = () => {
 
-    console.log(' logged tennet details number ', phoneNumber);
-    console.log(' logged tennet details number ', enteredPhoneNumberModal);
+    //   console.log(' logged tennet details number ', phoneNumber);
+    //   console.log(' logged tennet details number ', enteredPhoneNumberModal);
 
     const oldDataRef = database.ref(`adminRootReference/tenantDetails/${phoneNumber}`);
     const newDataRef = database.ref(`adminRootReference/tenantDetails/${enteredPhoneNumberModal}`);
@@ -390,40 +567,84 @@ function Phoneandenailverify() {
 
 
   const handleMobileOTPChange = (e) => {
-    setMobileOTP(e.target.value);
+    const input = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+
+
+    setMobileOTP(input);
     setMobileOTPError('');
   };
 
   const handleEmailOTPChange = (e) => {
-    setEmailOTP(e.target.value);
+    const input = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+
+    setEmailOTP(input);
     setEmailOTPError('');
   };
 
   const handleSubmitClick = async (e) => {
 
-    const storeSessionId = localStorage.getItem('sessionId');
-    const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
-    if (storeSessionId === sessionId) {
 
-      SessionUpdate();
+    if (mobileOTP === '') {
+      setMobileOTPError('Invalid mobile OTP');
+      return;
+    }
+    if (emailOTP === '') {
+      setMobileOTPError('Invalid mobile OTP');
+      return;
+    }
 
 
+    // const storeSessionId = localStorage.getItem('sessionId');
+    // const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
+    // if (storeSessionId === sessionId) {
+
+    SessionUpdate();
     e.preventDefault(); // Prevent default form submission
     handleOnSubmit(); // Call the submit function
 
-  } else {
-    alert("You have been logged-out due to log-in from another device.");
-    // console.log('you are logg out ');
-    handleLogout();
-  }
+    // } else {
+    //   alert("You have been logged-out due to log-in from another device.");
+    //   // console.log('you are logg out ');
+    //   handleLogout();
+    // }
 
   };
 
-   
+
 
   const SessionUpdate = () => {
     SessionTime.updateSessionTimeActiveUser(phoneNumber);
   }
+
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    // window.location.reload(); // This will reload the page
+  };
+
+
+  const [isDialogOpenResponse, setIsDialogOpenResponse] = useState(false);
+  const closeDialogResponse = () => {
+    setIsDialogOpenResponse(false);
+    //  window.location.reload(); // This will reload the page
+  };
+
+
+  const [modalMessageLogout, setModalMessageLogout] = useState('');
+  const [isDialogOpenLogout, setIsDialogOpenLogout] = useState(false);
+
+  const closeDialogLogout = () => {
+    setIsDialogOpenLogout(false);
+    //  handleLogout();
+
+  };
+
+
+
+
+
 
 
 
@@ -431,11 +652,31 @@ function Phoneandenailverify() {
   return (
     <>
 
-<div>
+      <div>
 
-<Navbar />
+        <Navbar />
 
-</div>
+      </div>
+
+
+      {loading ? (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: '9999'
+        }}>
+          <div className="spinner-border text-danger" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+        </div>
+      ) : null}
 
       <div className='containers'>
         <div className='formgroup'>
@@ -450,8 +691,9 @@ function Phoneandenailverify() {
               placeholder=" Mobile OTP"
               value={mobileOTP}
               onChange={handleMobileOTPChange}
+              maxLength={6}
             />
-            {mobileOTPError && <p style={{color:'red'}} className="error">{mobileOTPError}</p>}
+            {mobileOTPError && <p style={{ color: 'red' }} className="error">{mobileOTPError}</p>}
           </div>
           <div>
             <label htmlFor="emailOTP">Enter E-mail OTP</label>
@@ -461,8 +703,9 @@ function Phoneandenailverify() {
               placeholder=" E-mail OTP"
               value={emailOTP}
               onChange={handleEmailOTPChange}
+              maxLength={6}
             />
-            {emailOTPError && <p  style={{color:'red'}}  className="error">{emailOTPError}</p>}
+            {emailOTPError && <p style={{ color: 'red' }} className="error">{emailOTPError}</p>}
           </div>
           <div className='d-grid col-4'>
             <button type="submit" className='btn btn-primary' onClick={handleSubmitClick}>
@@ -473,6 +716,51 @@ function Phoneandenailverify() {
 
         </div>
       </div>
+
+      <Modal show={isDialogOpen} onHide={closeDialog} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialog}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+      <Modal show={isDialogOpenResponse} onHide={closeDialogResponse} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p> {modalMessageResponse}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialogResponse}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+
+      <Modal show={isDialogOpenLogout} onHide={closeDialogLogout} backdrop="static" style={{ marginTop: '3%' }}>
+        {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+        <Modal.Body>
+          <p style={{ color: 'red' }}> {modalMessageLogout}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={closeDialogLogout}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+
 
 
     </>

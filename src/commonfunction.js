@@ -34,12 +34,12 @@ class CommonFuctions {
           }
         });
 
-        console.log('Number of children (excluding "tariff"): ', childCount);
+     //   console.log('Number of children (excluding "tariff"): ', childCount);
 
         return childCount;
       })
       .catch(error => {
-        console.error('Error fetching data:', error);
+      //  console.error('Error fetching data:', error);
 
         return -1;
       });
@@ -124,17 +124,30 @@ class CommonFuctions {
     try {
       const writeRtdb = firebase.functions().httpsCallable('writeRtdb');
       const response = await writeRtdb(data);
-      //  console.log('session data', response.data);
-      // alert(' Data updated successfully! ');
       // Return the response data if needed
       return response.data;
     } catch (error) {
-      
       //return error;
-      
      throw error;
     }
   };
+
+
+
+  callReconfigToken = async(data) => {
+    try {
+      const writeRtdb = firebase.functions().httpsCallable('reConfig');
+      const response = await writeRtdb(data);
+      // Return the response data if needed
+     // console.log('Reconfig response:', response.data);
+      return response.data;
+    } catch (error) {
+      // Handle error
+    //  console.error('Error calling reConfig:', error);
+      throw error;
+    }
+  }
+  
 
   // callWriteRtdbFunction = async (data) => {
   //   try {
@@ -277,7 +290,7 @@ class CommonFuctions {
     await this.callWriteRtdbFunction(dataToSend);
   }
   catch (error) {
-  //  console.error("Error in Session id update or not ", error);
+      // console.error("Error in Session id update or not ", error);
      // Handle the error further if needed
     return error;
   }

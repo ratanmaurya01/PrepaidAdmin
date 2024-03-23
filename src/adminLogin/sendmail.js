@@ -44,12 +44,14 @@ const Send = () => {
         localStorage.setItem('emailOTP', emailOTP); // Store email OTP in local storage
         setErrorMessage('OTP sent successfully.');
       } else {
-        console.error('Email OTP not found in the response:', result);
+       // console.error('Email OTP not found in the response:', result);
         setErrorMessage('Error sending OTP. Please try again.');
       }
     } catch (error) {
-      console.error('Error sending email:', error.message);
+    //  console.error('Error sending email:', error.message);
       setErrorMessage('Error sending OTP. Please try again.');
+     throw error;
+
     }
   };
   

@@ -25,7 +25,7 @@ function Phonepasswordchange() {
     const [user, setUser] = useState(null);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [enteredPhoneNumberModal, setEnteredPhoneNumberModal] = useState('');
@@ -58,7 +58,7 @@ function Phonepasswordchange() {
                     //  console.log("Number", numberPart);
                     setPhoneNumber(numberPart);
                     getAdminPassword(numberPart);
-                 
+
 
                 }
             } else {
@@ -73,6 +73,8 @@ function Phonepasswordchange() {
 
 
     const getAdminPassword = (numberPart) => {
+
+
         const passwordRef = database.ref(`/adminRootReference/adminDetails/${numberPart}/adminProfile`);
 
         passwordRef.once('value', (snapshot) => {
@@ -125,33 +127,20 @@ function Phonepasswordchange() {
     };
 
 
-   
-    const handleSubmit = async(e) => {
+    const handleSubmit = async (e) => {
 
         e.preventDefault();
 
-
-        const storeSessionId = localStorage.getItem('sessionId');
-        const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
-        if (storeSessionId === sessionId) {
-
-            
-            SessionUpdate();
+        SessionUpdate();
 
         const enteredPhoneNumber = e.target.newPhoneNumber.value;
         const enteredPassword = e.target.newPassword.value;
 
+
         if (!enteredPhoneNumber.trim() && !enteredPassword.trim()) {
-            setError("Cannot be empty ");
+            setError("Please enter at least one field.");
             return;
         }
-
-        if (enteredPhoneNumber.length < 10) {
-            setErrorPhoneError("Enter correct phone number");
-            return;
-        }
-
-
         if (enteredPhoneNumber === phoneNumber) {
             setError("No change in existing mobile no. and password Re-Config token will not be generated");
         } else {
@@ -160,20 +149,31 @@ function Phonepasswordchange() {
                 setError("No change in existing mobile no. and password Re-Config token will not be generated");
                 return;
             }
-            //  console.log("New Password:", enteredPassword);
-            getAdminPhoneList(enteredPhoneNumber);
-            //  setEnteredPhoneNumberModal(enteredPhoneNumber);
-            setEnteredPasswordModal(enteredPassword);
-            // Add logic to update the database or perform other actions with the form data
-            handleShow();
-        } 
-        
-    } else {
 
-        alert("You have been logged-out due to log-in from another device.");
-        // console.log('you are logg out ');
-        handleLogout();
-    }
+            const storeSessionId = localStorage.getItem('sessionId');
+
+            const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
+            if (storeSessionId === sessionId) {
+
+
+                //  console.log("New Password:", enteredPassword);
+                getAdminPhoneList(enteredPhoneNumber);
+                //  setEnteredPhoneNumberModal(enteredPhoneNumber);
+                setEnteredPasswordModal(enteredPassword);
+                // Add logic to update the database or perform other actions with the form data
+                handleShow();
+
+            } else {
+
+                alert("You have been logged-out due to log-in from another device.");
+                // console.log('you are logg out ');
+                handleLogout();
+
+
+            }
+        }
+
+
     };
 
 
@@ -184,12 +184,14 @@ function Phonepasswordchange() {
         // console.log("Old Email ", email);
         // if (enteredPhoneNumberModal ===phoneNumber) {
         //     navigate('/phoneemail', { state: { email, phoneNumber } });
-        // } else {
+        // } 
+        
+        // else {
         //     navigate('/phoneotp', { state: { email, enteredPhoneNumberModal, enteredPasswordModal, phoneNumber } });
         // }
-        //  if(enteredPasswordModal != password){
+        // if (enteredPasswordModal != password) {
         //     navigate('/passwordchange', { state: { email, enteredPasswordModal, phoneNumber } });
-        //  } 
+        // }
         // if (enteredPhoneNumberModal !== phoneNumber && enteredPasswordModal != password) {
         //     navigate('/phoneemail', { state: { enteredPhoneNumberModal, email, enteredPasswordModal } });;
         // }
@@ -254,111 +256,143 @@ function Phonepasswordchange() {
 
     const history = useNavigate();
     const handleLogout = () => {
-      auth.signOut().then(() => {
-        // Redirect to login page after successful logout
-        history('/'); // Change '/login' to your login page route
-      }).catch((error) => {
-        // Handle any errors during logout
-        console.error('Error logging out:', error.message);
-      })
-  
+        auth.signOut().then(() => {
+            // Redirect to login page after successful logout
+            history('/'); // Change '/login' to your login page route
+        }).catch((error) => {
+            // Handle any errors during logout
+            console.error('Error logging out:', error.message);
+        })
+
     }
 
 
     const SessionValidate = async () => {
-  
-      const storeSessionId = localStorage.getItem('sessionId');
-      const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
-      // console.log("Received session ID from server: ", sessionId);
-  
-      if (storeSessionId === sessionId) {
-        //  console.log('SessionId Match ', sessionId);
-        return;
-      } else {
-        //  console.log('SessionId Mismatch');
-        alert("Cannot login. Another session is active. Please retry after sometime. ");
-        // console.log('you are logged out ');
-        handleLogout();
-      }
-  
+
+        const storeSessionId = localStorage.getItem('sessionId');
+        const { sessionId } = await SessionTime.HandleValidatSessiontime(phoneNumber);
+        // console.log("Received session ID from server: ", sessionId);
+
+        if (storeSessionId === sessionId) {
+            //  console.log('SessionId Match ', sessionId);
+            return;
+        } else {
+            //  console.log('SessionId Mismatch');
+            alert("Cannot login. Another session is active. Please retry after sometime. ");
+            // console.log('you are logged out ');
+            handleLogout();
+        }
+
     };
     const SessionUpdate = () => {
-      SessionTime.updateSessionTimeActiveUser(phoneNumber);
+        SessionTime.updateSessionTimeActiveUser(phoneNumber);
     }
-  
+
+
+
+
+    const [isOpenInternet, setisOpenInternet] = useState(false);
+    const [modalMessage, setModalMessage] = useState('');
+
+    const closeInternet = () => {
+        setisOpenInternet(false);
+        // window.location.reload(); // This will reload the page
+    };
+
+
+
 
 
     return (
         <>
+        
+            {loading ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: '9999'
+                }}>
+                    <div className="spinner-border text-danger" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>
+            ) : null}
+
+
             <div className='container'>
                 <div>
-                    {loading ? (
-                        // Display a loading spinner or message while data is being fetched
-                        <p>Loading...</p>
-                    ) : (
-                        <form className='formsection' onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label className='lable' htmlFor="newPhoneNumber">New Phone Number</label>
-                                <div className='input-container1'>
 
-                                    <input type='text'
-                                        id="newPhoneNumber"
-                                        placeholder='Enter Mobile Number'
-                                        maxLength={10}
-                                        className='form-control'
-                                        // onInput={(e) => {
-                                        //     e.target.value = e.target.value.replace(/[^0-9]/g, ''); // Allow only numeric input
-                                        // }}
-                                        value={enteredPhoneNumberModal}
-                                        onChange={handleChange}
-                                        style={{ paddingLeft: '30px' }}
 
+                    <form className='formsection' onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label className='lable' htmlFor="newPhoneNumber">New Phone Number</label>
+                            <div className='input-container1'>
+
+                                <input type='text'
+                                    id="newPhoneNumber"
+                                    placeholder='Enter Mobile Number'
+                                    maxLength={10}
+                                    className='form-control'
+                                    // onInput={(e) => {
+                                    //     e.target.value = e.target.value.replace(/[^0-9]/g, ''); // Allow only numeric input
+                                    // }}
+                                    value={enteredPhoneNumberModal}
+                                    onChange={handleChange}
+                                    style={{ paddingLeft: '30px' }}
+
+                                />
+                                <i className="fas fa-phone"></i>
+
+                            </div>
+                            {errorphone && (
+                                <div style={{ color: 'red' }}>{errorphone}</div>
+                            )}
+
+                            <div style={{ color: 'red' }}>{phoneError
+                            }</div>
+
+                            <span>Leave blank if don't want to change </span>
+                        </div>
+
+
+                        <div className="form-group">
+                            <label htmlFor="newPassword">New Password</label>
+                            <div className='input-container1'>
+                                <input
+                                    //  type='text'
+                                    // type={showPassword ? 'text' : 'password'}
+                                    type={showPassword ? 'text' : 'password'}
+                                    id="newPassword"
+                                    placeholder='Enter New Password'
+                                    maxLength={20}
+                                    autoComplete="new-passowrd"
+                                    style={{ paddingLeft: '30px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={togglePasswordVisibility}
+                                    className="password-toggle-button1"
+                                >
+                                    <FontAwesomeIcon
+                                        icon={showPassword ? faEyeSlash : faEye}
+                                        className="password-toggle-icon"
                                     />
-                                    <i className="fas fa-phone"></i>
-
-                                </div>
-                                {errorphone && (
-                                    <div style={{ color: 'red' }}>{errorphone}</div>
-                                )}
-
-                                <div style={{ color: 'red' }}>{phoneError
-                                }</div>
-
-                                <span>Leave blank if don't want to change </span>
+                                </button>
+                                <i class="fas fa-lock password-icon"></i>
                             </div>
 
-
-                            <div className="form-group">
-                                <label htmlFor="newPassword">New Password</label>
-                                <div className='input-container1'>
-                                    <input
-                                        //  type='text'
-                                        // type={showPassword ? 'text' : 'password'}
-                                        type={showPassword ? 'text' : 'password'}
-                                        id="newPassword"
-                                        placeholder='Enter New Password'
-                                        maxLength={16}
-                                        autoComplete="new-passowrd"
-                                        style={{ paddingLeft: '30px' }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={togglePasswordVisibility}
-                                        className="password-toggle-button1"
-                                    >
-                                        <FontAwesomeIcon
-                                            icon={showPassword ? faEyeSlash : faEye}
-                                            className="password-toggle-icon"
-                                        />
-                                    </button>
-                                    <i class="fas fa-lock password-icon"></i>
-                                </div>
-
-                                <span>Minimum 8 characters, leave blank if don't want to change</span>
-                            </div>
+                            <span>Minimum 8 characters, leave blank if don't want to change</span>
+                        </div>
 
 
-                            {/* 
+                        {/* 
 <div className="form-group">
   <label htmlFor="newPassword">New Password</label>
   <div className='input-container1'>
@@ -391,16 +425,16 @@ function Phonepasswordchange() {
  */}
 
 
-                            <div>
-                                <p style={{ color: 'blue', fontSize: '20px' }}>Note: Only the latest token is available. All pending tokens will be removed.</p>
-                            </div>
-                            <div style={{ color: 'red' }}>{error}</div>
-                            <div style={{ marginLeft: '23%' }}>
-                                {/* Centered button */}
-                                <button type="submit" className="btn btn-primary">Generate Token</button>
-                            </div>
-                        </form>
-                    )}
+                        <div>
+                            <p style={{ color: 'blue', fontSize: '20px' }}>Note: Only the latest token is available. All pending tokens will be removed.</p>
+                        </div>
+                        <div style={{ color: 'red' }}>{error}</div>
+                        <div style={{ marginLeft: '23%', marginTop: '20px' }}>
+                            {/* Centered button */}
+                            <button type="submit" className="btn btn-primary">Generate Token</button>
+                        </div>
+                    </form>
+
                 </div>
 
             </div>
@@ -441,6 +475,21 @@ function Phonepasswordchange() {
 
                     <Button variant="primary" onClick={handleModalSubmit}>
                         YES
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+
+
+            <Modal show={isOpenInternet} onHide={closeInternet} backdrop="static" style={{ marginTop: '3%', pointerEvents: loading ? 'none' : 'auto' }}>
+                {/* <Modal.Header closeButton>
+      </Modal.Header>  */}
+                <Modal.Body>
+                    <p> {modalMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={closeInternet}>
+                        Close
                     </Button>
                 </Modal.Footer>
             </Modal>
